@@ -62,7 +62,7 @@ $body = '{"model":"deepseek-v4.1-flash","messages":[{"role":"user","content":"pi
 | `day2_format.py` | День 2: один запрос с разным уровнем контроля формата |
 | `day3_reasoning.py` | День 3: 10 задач × 4 способа рассуждения × 2 уровня reasoning |
 | `results/` | сырые ответы и отчёты прогонов, выводы — `day2_conclusions.md`, `day3_conclusions.md` |
-| `tasks/` | тексты заданий челленджа |
+| `tasks/` | тексты заданий; `new_task.ps1` — добавить задание, `publish_day.py` — опубликовать день |
 
 ## День 2: формат ответа
 
@@ -164,3 +164,24 @@ python day3_reasoning.py --low thinking.type=disabled --high thinking.type=enabl
 и `results/day3_<набор>_<время>.md` (таблица, разбивка по задачам и экспертам, ошибки).
 
 Выводы по прогону на `deepseek-v4.1-flash` — в [`results/day3_conclusions.md`](results/day3_conclusions.md).
+
+## Публикация результатов дня
+
+`tasks/publish_day.py` коммитит всё, что не исключено `.gitignore`, в `main`, создаёт ветку
+`week_<N>/day_<M>` на том же коммите и отправляет обе на GitHub одной атомарной операцией
+(уходят вместе или не уходят вовсе). Промпт для Claude — `tasks/PUBLISH_PROMPT.md`.
+
+```powershell
+python tasks\publish_day.py --dry-run            # проверки и список файлов, ничего не меняет
+python tasks\publish_day.py                      # последний день из tasks\week_*_day_*.md, спросит подтверждение
+python tasks\publish_day.py -m "День 4: <что сделано>"
+python tasks\publish_day.py --week 1 --day 4 --message-file msg.txt --yes
+python tasks\publish_day.py --no-push            # только локально; потом --push-only
+```
+
+До любых изменений скрипт проверяет: текущая ветка `main`, нет незавершённого merge/rebase
+и lock-файлов; ветки дня ещё нет ни локально, ни на GitHub; в коммит не попадают `.env`,
+ключ из `.env` и файлы больше 20 МБ. Если локальный `main` отстал от GitHub (день отправили
+с другого места), а изменённые файлы совпадают, `main` переносится на версию с GitHub без потерь;
+при настоящем расхождении скрипт останавливается и ничего не трогает. После push сверяет,
+что `main` и ветка дня на GitHub указывают на новый коммит.
