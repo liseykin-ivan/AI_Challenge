@@ -18,6 +18,8 @@ class ChatResult:
     model: str
     usage: dict
     latency: float  # секунды
+    finish_reason: str | None = None  # "stop" | "length" | ... — почему модель остановилась
+    reasoning: str = ""  # скрытое рассуждение reasoning-моделей (reasoning_content), если провайдер его отдаёт
 
 
 class LLMClient:
@@ -30,7 +32,8 @@ class LLMClient:
         # OpenCode Go требует стабильный ID диалога: по нему он маршрутизирует и кэширует запросы.
         self.session_id = session_id or uuid.uuid4().hex
 
-    def chat(self, messages: list[dict]) -> ChatResult:
+    def chat(self, messages: list[dict], **params) -> ChatResult:
+        """params — дополнительные поля запроса: max_tokens, stop, response_format, temperature..."""
         url = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -38,6 +41,7 @@ class LLMClient:
             "x-opencode-session": self.session_id,
         }
         payload = {"model": self.model, "messages": messages}
+        payload.update({k: v for k, v in params.items() if v is not None})
 
         start = time.perf_counter()
         try:
@@ -53,7 +57,10 @@ class LLMClient:
 
         try:
             data = response.json()
-            text = data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            message = choice["message"]
+            text = message["content"]
+            reasoning = message.get("reasoning_content") or message.get("reasoning") or ""
         except (ValueError, KeyError, IndexError, TypeError):
             raise LLMError(f"неожиданный ответ сервера: {response.text[:200]!r}")
 
@@ -62,6 +69,8 @@ class LLMClient:
             model=data.get("model") or self.model,
             usage=data.get("usage") or {},
             latency=latency,
+            finish_reason=choice.get("finish_reason"),
+            reasoning=reasoning if isinstance(reasoning, str) else str(reasoning),
         )
 
     def _http_error(self, response: httpx.Response) -> str:

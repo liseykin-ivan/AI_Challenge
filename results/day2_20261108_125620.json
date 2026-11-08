@@ -1,0 +1,423 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "question": "Посоветуй 3 языка программирования для начинающего бэкенд-разработчика и объясни выбор.",
+  "summary": [
+    {
+      "variant": "plain",
+      "title": "Без ограничений",
+      "runs": 3,
+      "strict": 0,
+      "loose": 0,
+      "schema": 0,
+      "avg_tokens": 2158,
+      "finish": [
+        "stop"
+      ],
+      "problems": {
+        "не JSON: JSONDecodeError: Expecting value (строка 1, столбец 1)": 3
+      }
+    },
+    {
+      "variant": "format",
+      "title": "Формат описан в промте",
+      "runs": 3,
+      "strict": 3,
+      "loose": 3,
+      "schema": 3,
+      "avg_tokens": 342,
+      "finish": [
+        "stop"
+      ],
+      "problems": {}
+    },
+    {
+      "variant": "max_tokens",
+      "title": "Формат + max_tokens=60",
+      "runs": 3,
+      "strict": 0,
+      "loose": 0,
+      "schema": 0,
+      "avg_tokens": 60,
+      "finish": [
+        "length"
+      ],
+      "problems": {
+        "пустой ответ: лимит max_tokens съело рассуждение, до JSON модель не дошла": 3
+      }
+    },
+    {
+      "variant": "stop",
+      "title": "Формат + stop='<END>'",
+      "runs": 3,
+      "strict": 0,
+      "loose": 0,
+      "schema": 0,
+      "avg_tokens": 27,
+      "finish": [
+        "stop"
+      ],
+      "problems": {
+        "пустой ответ: stop sequence сработал внутри рассуждения, до ответа модель не дошла": 3
+      }
+    },
+    {
+      "variant": "json_mode",
+      "title": "JSON mode (json_object)",
+      "runs": 3,
+      "strict": 3,
+      "loose": 3,
+      "schema": 3,
+      "avg_tokens": 347,
+      "finish": [
+        "stop"
+      ],
+      "problems": {}
+    },
+    {
+      "variant": "schema",
+      "title": "Строгая JSON Schema",
+      "runs": 3,
+      "strict": 3,
+      "loose": 3,
+      "schema": 3,
+      "avg_tokens": 301,
+      "finish": [
+        "stop"
+      ],
+      "problems": {}
+    },
+    {
+      "variant": "schema_max_tokens",
+      "title": "Строгая схема + max_tokens=60",
+      "runs": 3,
+      "strict": 0,
+      "loose": 0,
+      "schema": 0,
+      "avg_tokens": 60,
+      "finish": [
+        "length"
+      ],
+      "problems": {
+        "пустой ответ: лимит max_tokens съело рассуждение, до JSON модель не дошла": 2,
+        "не JSON — обрезан по лимиту (finish_reason=length): JSONDecodeError: Expecting value (строка 2, столбец 17)": 1
+      }
+    }
+  ],
+  "runs": [
+    {
+      "variant": "plain",
+      "run": 1,
+      "text": "Я бы советовал для старта такую тройку: **Python, TypeScript/JavaScript (Node.js), Java**. Но важно: **учить все три одновременно не надо** — выбери один основной язык, а остальные добавляй позже.\n\n### 1. Python — лучший первый язык\n**Почему:**\n- Простой и читаемый синтаксис, легче войти.\n- Отличная экосистема для бэкенда: **FastAPI, Django, Flask**.\n- Много учебных материалов и вакансий для начинающих.\n- Хорошо подходит для API, автоматизации, работы с данными.\n\n**Минусы:**\n- Динамическая типизация — ошибки легче пропустить.\n- Медленнее Java/Go, но для большинства веб-задач это не критично.\n\n**Кому подойдёт:** если хочешь быстро начать писать бэкенд и понять базу.\n\n---\n\n### 2. TypeScript/JavaScript + Node.js — для веба и фулстека\n**Почему:**\n- Один язык можно использовать и на фронтенде, и на бэкенде.\n- Огромная экосистема: **Express, NestJS, Fastify**.\n- TypeScript добавляет статическую типизацию и делает код надёжнее.\n- Много вакансий в веб-разработке, стартапах, продуктовых командах.\n\n**Минусы:**\n- Асинхронность и event loop поначалу сложны.\n- В npm много пакетов разного качества.\n- Чистый JavaScript без TypeScript может быть менее предсказуемым.\n\n**Кому подойдёт:** если интересен веб, фулстек и быстрый выход на проекты.\n\n---\n\n### 3. Java — для крупного энтерпрайза\n**Почему:**\n- Статическая типизация и ООП хорошо дисциплинируют.\n- **Spring Boot** — стандарт для крупных бэкенд-систем.\n- Много вакансий в банках, крупных компаниях, enterprise.\n- Хорошо учит архитектуре и надёжности.\n\n**Минусы:**\n- Более многословный и тяжёлый старт.\n- Больше boilerplate, чем в Python.\n\n**Кому подойдёт:** если целишься в крупные компании, банки, enterprise-разработку.\n\n---\n\n### Если хочется более современную альтернативу Java\nПосмотри на **Go**: простой синтаксис, статическая типизация, хорошая работа с конкурентностью и микросервисами. Но junior-вакансий и обучающих материалов обычно меньше, чем по Python/JS/Java.\n\n### Практический совет\nНачни с **одного** языка:\n- хочешь быстро и просто — **Python**;\n- хочешь веб/фулстек — **TypeScript + Node.js**;\n- хочешь enterprise и большие системы — **Java**.\n\nА параллельно учи то, что важнее языка: **HTTP, REST, SQL, PostgreSQL, Git, Docker, тесты, Linux, авторизацию**. Второй язык добавляй через 6–12 месяцев, когда уже сможешь сделать простой бэкенд на первом.",
+      "finish_reason": "stop",
+      "completion_tokens": 2832,
+      "reasoning_tokens": 2086,
+      "reasoning": "We need answer in Russian. Need recommend 3 languages for beginner backend and explain choice. Need likely Python, JavaScript/TypeScript (Node.js), Go? Or PHP? Java? Need nuance. User asks \"Посоветуй 3 языка программирования для начинающего бэкенд-разработчика и объясни выбор.\" Need concise but useful. Need choose 3. For beginner backend, common: Python, JavaScript/TypeScript, Go. Explain each: Python easy, Django/FastAPI, broad; JS/TS Node.js fullstack and huge ecosystem; Go simple syntax, compiled, concurrency, good for modern backend/microservices but less OOP? Or Java? For beginner backend, Java is strong enterprise but more verbose. Need maybe recommend Python, JavaScript/TypeScript, Java? Let's think.\n\nQuestion asks 3 languages for beginner backend developer. Need explain choice. We can recommend considering goals. Need not overdo. Desired oververbosity 5. Answer in Russian.\n\nNeed decide best trio. For beginner: Python (easy, FastAPI/Django), JavaScript/TypeScript (Node.js, fullstack, ecosystem), Go (simple, performance, concurrency, modern infrastructure). But Java is more market demand for enterprise. Which three? If \"начинающий бэкенд\" and need practical, Python + JS/TS + Java? Go maybe not as beginner-friendly due to ecosystem? Actually Go is simple. But 3 languages: Python, TypeScript/JavaScript, Go. Explain why not Java? We can mention Java as alternative if enterprise. Need maybe mention TypeScript not exactly backend? Node.js. Language is TypeScript, compiles to JS. Good.\n\nNeed structure:\n- Сразу: не учить все три одновременно. Выбрать один основной, второй позже.\n1) Python — лучший первый язык. Syntax readable; Django/FastAPI; many educational materials; backend, automation, data; cons slower runtime, GIL for CPU-bound, but fine for most.\n2) JavaScript/TypeScript (Node.js) — one language frontend/backend; huge ecosystem; Express/NestJS; TypeScript adds types; good for web APIs, realtime; cons async complexity, npm dependency quality; TS recommended.\n3) Go — simple, compiled, strong standard library, goroutines, static typing; good for microservices, high-load, cloud/DevOps; cons fewer frameworks/ORM, error handling verbose, less beginner material? But good after basics.\nMaybe mention Java as alternative: if target enterprise (banks, big companies), choose Java instead of Go. But answer asks 3, so maybe include Java instead of Go? Need choose.\n\nLet's evaluate from \"beginner backend\" perspective. Most recommended first backend languages: Python, JavaScript/Node, Java, PHP, Go, C#. For beginners, Python and JS/TS; third maybe Java because huge backend job market, strong typing, Spring Boot, enterprise. Go is trendy but job market smaller for juniors; simpler syntax but not as many junior roles? Java is more verbose but teaches OOP and has many junior positions. Hmm.\n\nNeed \"посоветуй 3 языка\" not \"best\". We can frame:\n- Python — основной старт.\n- TypeScript/JavaScript (Node.js) — для веба и fullstack.\n- Java — если целишься в крупный энтерпрайз/банки; альтернатива — Go для микросервисов/инфры.\nBut then only 3? We can list 3: Python, TypeScript, Java. Mention Go as alternative? That would be 4. User asked 3, maybe keep exactly 3 and mention alternative in note. Need not confuse. But \"3 languages\" maybe list Python, JS/TS, Go. Need decide.\n\nLet's consider Russian job market. Backend junior: Python, Java, PHP, Node.js, Go, C#. Python popular; Java enterprise; PHP still many web; Go growing. For beginner: Python, JavaScript/TypeScript, Go? Go less junior. Java has high entry barrier but strong. If advising beginner, maybe Python, JS/TS, Java. Explain Java: strict typing, OOP, Spring Boot, huge enterprise demand, but more verbose. This is classic and useful. But Go is simpler and modern; could be more motivating. Which is better as \"3 languages\"? We can say:\n1. Python — first.\n2. TypeScript (Node.js) — second for web/fullstack.\n3. Java — third for enterprise; if not interested in enterprise, replace with Go.\nThis gives exactly 3 plus optional note. That seems robust. Need explain choice. Mention order: choose one, not all. Need mention Python for first, TypeScript for web, Java for enterprise. Alternative Go. Good.\n\nNeed answer in Russian. Need be helpful. Maybe include table? Desired oververbosity 5. We can do bullets.\n\nNeed mention \"бэкенд-разработчик\" languages not only. Key factors: easy start, job market, ecosystem, learning concepts. Need say \"не учите три сразу\". Recommend main language based on goal:\n- Хочешь быстро начать и делать API — Python.\n- Хочешь веб/фулстек и много вакансий — TypeScript/Node.js.\n- Хочешь крупный энтерпрайз/банки — Java.\n- Если интересны микросервисы/облака/DevOps — Go как альтернатива Java.\n\nNeed explain each:\nPython:\n+ readable, low entry barrier, FastAPI/Django, pytest, SQLAlchemy; broad: scripts, data, ML; many Russian courses.\n- slower, dynamic typing can hide errors; GIL; need discipline.\nJS/TS:\n+ same language frontend/backend, huge ecosystem, Express/NestJS/Fastify, real-time, serverless; TypeScript static typing.\n- async/event loop pitfalls; npm quality; JS dynamic; TS setup.\nJava:\n+ static typing, OOP, Spring Boot, strong enterprise market, performance; teaches architecture.\n- verbose, heavier entry, more boilerplate; long compile? Not too.\nAlternative Go: simple, concurrency, compiled, cloud; fewer junior roles/frameworks.\n\nNeed final: \"Мой практический совет: начни с Python (или TypeScript, если хочешь фронт+бэк). Через 6–12 месяцев, когда освоишь HTTP, БД, SQL, Git, Docker, Auth, выбери второй. Java/Go — как третий/целевой.\" Need mention don't learn three simultaneously. Need maybe \"TypeScript — не отдельный бэкенд-язык, а надстройка над JS; на бэкенде работает через Node.js/Deno/Bun.\" Good.\n\nNeed answer likely in Russian. We can mention \"3 языка: Python, TypeScript/JavaScript, Java (или Go)\"? The question asks 3; if I say Java (или Go) maybe not exactly. But maybe acceptable. Need be precise. Could list exactly three: Python, TypeScript/JavaScript, Go. Add \"Java — альтернатива Go\". Hmm.\n\nLet's craft final with exactly 3 and a note. Which third? I lean Java for beginner backend because job market and foundational. But Go is modern and simple. User asked \"посоветуй\" not \"job market\". For a beginner, Java may be harder. But \"3 languages\" can include one harder as third. Need explain. Let's decide: Python, JavaScript/TypeScript, Java. Mention \"если хочется более современный и простой путь в микросервисы — вместо Java смотри Go\". That covers. But if they wanted 3, note alternative is okay.\n\nNeed final answer with moderate detail. Use headings. Maybe \"Коротко: Python, TypeScript (Node.js), Java. Если цель — облака/микросервисы, вместо Java возьми Go.\" That is clear.\n\nNeed include \"не учить все сразу\". Good.\n\nLet's produce. \nNeed maybe mention \"начинающему бэкенд-разработчику\" - include core backend concepts independent of language: HTTP, REST, SQL, DB, Git, Docker, tests, auth. Good.\n\nNeed final in Russian. Use emojis? Not necessary. Keep friendly. Desired oververbosity 5. Let's craft with bullets and table maybe. Table can be concise. But final answer length moderate. Need include \"выбор\" explanation.\n\nNeed answer:\n\"Я бы советовал так: 1) Python; 2) TypeScript/JavaScript (Node.js); 3) Java (либо Go как альтернативу). Но учить сразу три не надо.\"\n\nExplain:\nPython:\n- first language, syntax simple, FastAPI/Django, huge community, good for API and understanding.\n- cons dynamic typing, slower, GIL.\n\nTypeScript/JS:\n- Node.js, NestJS/Express, one language for front/back, huge ecosystem, high demand in web, TS types.\n- cons async complexity, npm, dynamic JS.\n\nJava:\n- enterprise, Spring Boot, static typing, OOP, high junior market in banks/large companies, performance.\n- cons verbose, harder start.\n\nAlternative Go:\n- simple, static, goroutines, stdlib, cloud/microservices; fewer junior roles and frameworks.\n\nPractical plan:\n- Choose one main: Python if quick start/API; TS if web/fullstack; Java if enterprise.\n- Learn backend fundamentals: HTTP, REST, SQL, PostgreSQL, Git, Docker, tests, auth, Linux basics.\n- Second language after 6-12 months. Don't learn three at once.\n\nNeed mention \"TypeScript — надстройка над JS, на бэкенде через Node.js\". Good.\n\nFinal.",
+      "latency": 38.04044840000097,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "не JSON: JSONDecodeError: Expecting value (строка 1, столбец 1)"
+    },
+    {
+      "variant": "plain",
+      "run": 2,
+      "text": "Для начинающего бэкенд-разработчика я бы советовал такую тройку: **Python, TypeScript/Node.js и Go**. Но учить их одновременно не нужно — лучше последовательно.\n\n1. **Python — лучший первый язык**\n   - Простой и читаемый синтаксис, легко начать.\n   - Быстро можно сделать реальный бэкенд на **FastAPI** или **Django**.\n   - Много учебных материалов, вакансий и сообществ.\n   - Хорошо учит базовым вещам: HTTP, БД, API, авторизация, работа с ORM.\n   - Минусы: динамическая типизация требует дисциплины, не лучший выбор для очень высоконагруженных CPU-задач.\n\n2. **TypeScript на Node.js — для веб-разработки и fullstack**\n   - TypeScript — это JavaScript с типами, а Node.js позволяет писать бэкенд на том же языке, что и фронтенд.\n   - Огромная экосистема: Express, NestJS, Prisma и т.д.\n   - Статическая типизация снижает число ошибок по сравнению с чистым JavaScript.\n   - Очень востребован в веб-разработке, особенно если интересен fullstack.\n   - Минусы: асинхронность и npm-экосистема поначалу могут пугать; типы TypeScript не заменяют валидацию данных во время выполнения.\n\n3. **Go — для роста в сторону микросервисов и инфраструктуры**\n   - Простой и строгий синтаксис, статическая типизация.\n   - Отличная работа с конкурентностью: goroutines, каналы.\n   - Компилируется в один бинарник, удобно деплоить.\n   - Популярен в облаках, микросервисах, DevOps-инструментах.\n   - Минусы: меньше «батареек» и фреймворков, чем в Python/JS; junior-вакансий в некоторых регионах меньше.\n\n**Порядок обучения:** сначала Python + один фреймворк + SQL/Git/HTTP, затем TypeScript/Node.js, а Go — после базы, если интересны высоконагруженные сервисы и микросервисы.\n\nЕсли рынок труда в вашем регионе сильно enterprise-ориентирован, вместо Go можно рассматривать **Java** — она особенно сильна в крупных компаниях и банках. Но как универсальная тройка для старта **Python + TypeScript + Go** — хороший выбор.",
+      "finish_reason": "stop",
+      "completion_tokens": 1557,
+      "reasoning_tokens": 966,
+      "reasoning": "We need answer in Russian. Need recommend 3 languages for beginner backend dev and explain choice. Need be concise but useful. Need likely Python, JavaScript/TypeScript (Node.js), Go? Or Java? Need consider beginner backend. Explain selection, tradeoffs. User asks \"Посоветуй 3 языка программирования для начинающего бэкенд-разработчика и объясни выбор.\" Need answer. Need maybe mention one primary, one for web fullstack, one for performance/concurrency. Choose Python, JavaScript/TypeScript, Go. Or Python, Java, Go? Let's think.\n\nFor beginner backend, common: Python (easy, Django/FastAPI), JavaScript/TypeScript (Node.js, fullstack, huge ecosystem), Java (enterprise, strong typing, Spring, but heavier) or Go (simple, concurrency, cloud). Which three best? Need justify. The prompt asks \"посоветуй 3 языка\". We can provide tailored: Python, TypeScript, Go. Explain why not Java maybe. But is Go beginner-friendly? Syntax simple but concurrency and ecosystem maybe. Java is very employable, but verbose and heavy for beginner. Python is best first. TypeScript is useful because JS everywhere and backend via Node, plus types. Go is simple, compiled, good for microservices. But for a beginner, maybe learning Python + TypeScript + Java covers jobs. However Go is increasingly backend. Need decide.\n\nNeed answer in Russian. Could structure:\n1. Python — первый язык. Простой синтаксис, быстро к результату, Django/FastAPI, много учебных материалов, backend, scripts, data. Minus: производительность/GIL, динамическая типизация -> дисциплина.\n2. TypeScript (на Node.js) — второй. Один язык frontend/backend, огромная экосистема npm, Express/NestJS, типизация снижает ошибки, востребован в веб-разработке. Minus: асинхронность и экосистема сложны, много \"магии\".\n3. Go — третий для роста. Простой и строгий синтаксис, статическая типизация, компиляция, отличная конкурентность, быстрые бинарники, популярен в микросервисах/облаках. Minus: меньше фреймворков/ORM, больше ручной работы, не так много junior вакансий в некоторых регионах.\n\nMaybe mention if goal enterprise: Java instead of Go. But question asks 3. Could include \"если рынок труда в вашем регионе enterprise — замените Go на Java\". Need maybe mention learning order: Python -> TypeScript -> Go. But if want fullstack web, TypeScript first? Hmm.\n\nNeed answer with explanation and maybe practical plan. Desired oververbosity 5. Need not too long. Need answer \"посоветуй 3\". Include \"не учи все одновременно\". Good.\n\nNeed maybe mention \"выбор зависит от вакансий\". The answer should be in Russian. Need no markdown? Can use bullets. Good.\n\nNeed ensure no unsupported claims. Let's formulate.\n\nPotential final:\n\"Для старта я бы советовал Python, TypeScript/Node.js и Go. Порядок: Python как первый, TypeScript как веб-стек, Go как язык для производительности/микросервисов.\"\n\nExplain each:\n- Python: low entry barrier, readable, FastAPI/Django, backend fundamentals, quick feedback, community. Ideal first. Not best for high-load CPU, dynamic typing.\n- TypeScript: superset JS, static types, Node.js backend, NestJS/Express, fullstack, huge market. Teaches async, HTTP, DB. Minus: npm ecosystem and async complexity; TS types don't replace runtime validation.\n- Go: small language, static typing, explicit errors, goroutines, compiled, simple deployment, popular in cloud/microservices. Good after basics. Minus: less beginner-oriented frameworks, more boilerplate, fewer junior roles in some markets.\n\nAdd \"Если цель — крупный enterprise (банки, корпорации), вместо Go смотрите Java; если мобилки/геймдев — C#. Но для общего backend эти три — хороший набор.\"\n\nNeed mention \"не распыляться: выберите Python + один фреймворк, SQL, Git, HTTP; потом TypeScript/Go\". Good.\n\nNeed final with \"3 языка\" and explanations. Let's answer in Russian. Use moderate detail.",
+      "latency": 21.8478697999999,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "не JSON: JSONDecodeError: Expecting value (строка 1, столбец 1)"
+    },
+    {
+      "variant": "plain",
+      "run": 3,
+      "text": "Для начинающего бэкенд-разработчика я бы посоветовал такой набор: **Python, TypeScript (Node.js) и Go**. Но важно: учить их **не одновременно**, а последовательно — сначала один основной, потом второй как расширение.\n\n### 1. Python\n**Почему:**\n- Самый низкий порог входа: простой синтаксис, быстро получается писать реальные программы.\n- Отличная экосистема для бэкенда: **Django, FastAPI, Flask**.\n- Много вакансий, особенно в веб-API, автоматизации, интеграциях, data/ML-смежных задачах.\n- Хорошо подходит для первых проектов: API, авторизация, работа с БД, админка.\n\n**Минусы:**\n- Динамическая типизация — нужно дисциплинированно использовать аннотации и тесты.\n- Ниже производительность, чем у Go/Java; для высоконагруженных сервисов выбирают реже.\n\n**Кому подойдёт:** если хочется быстро начать и понять базу бэкенда.\n\n---\n\n### 2. TypeScript / JavaScript на Node.js\n**Почему:**\n- **TypeScript** добавляет статическую типизацию поверх JavaScript и снижает число ошибок.\n- Node.js позволяет писать бэкенд на том же языке, что и фронтенд, — удобно для fullstack.\n- Огромная экосистема: **Express, NestJS, Fastify**.\n- Высокий спрос на рынке: веб-API, realtime-сервисы, стартапы, продуктовые команды.\n\n**Минусы:**\n- Экосистема шумная, много библиотек и подходов.\n- Нужно разобраться с асинхронностью, event loop и TypeScript.\n\n**Кому подойдёт:** если интересует веб, fullstack, стартапы и быстрая разработка API.\n\n---\n\n### 3. Go\n**Почему:**\n- Простой и компактный язык, статическая типизация, быстрая компиляция.\n- Сильная сторона — конкурентность: goroutines, каналы, хорошая стандартная библиотека.\n- Отлично подходит для микросервисов, облачных сервисов, высоконагруженных API.\n- Хороший выбор для роста после первого языка.\n\n**Минусы:**\n- Меньше «батареек» для классического CRUD, чем в Django/Spring.\n- Рынок вакансий уже, чем у Python/JS/Java, хотя в инфраструктуре и финтехе Go популярен.\n\n**Кому подойдёт:** если хочется современный backend, микросервисы и производительность.\n\n---\n\n### Что ещё важно\n**Java** — тоже отличный вариант для enterprise: Spring Boot, много вакансий, крупные компании. Но для новичка он обычно тяжелее и многословнее. Если в вашем регионе много Java-вакансий, можно заменить Go на Java.\n\n**Практический план:** выберите **Python или TypeScript** как первый язык, изучите HTTP, SQL, Git, Linux, основы Docker, сделайте 2–3 проекта. Второй язык добавляйте, когда уже есть база. Главное — не языки сами по себе, а понимание бэкенда: API, БД, авторизация, тесты, деплой.",
+      "finish_reason": "stop",
+      "completion_tokens": 2084,
+      "reasoning_tokens": 1300,
+      "reasoning": "We need answer in Russian. Need recommend 3 languages for beginner backend dev and explain choice. Need be concise but informative. Likely Python, JavaScript/TypeScript (Node.js), Go? Or Java? Need choose 3. For beginner backend, common: Python, JavaScript/TypeScript, Java? Go is good but maybe not first? Need explain tradeoffs. User asks \"посоветуй 3 языка программирования для начинающего бэкенд-разработчика и объясни выбор.\" Need give 3 languages and rationale. We need likely recommend Python, JavaScript/TypeScript, Java (or Go). Need decide best set. For beginner backend: Python easy, huge ecosystem, Django/FastAPI. JavaScript/TypeScript: fullstack, Node.js, same language front/back, huge demand. Java: enterprise, strong typing, Spring, lots jobs. Go: simple, modern, performant, but less beginner-friendly ecosystem? Actually Go is simple but maybe less jobs than Java; good for microservices/cloud. Which 3? Need mention if choose one: Python or TypeScript? But asked 3. Need maybe Python, Go, JavaScript/TypeScript. Java is verbose and more complex for beginner. But backend job market in Russia? Java very popular; Python also; JS/TS; Go growing. For beginner, Python + TypeScript + Go gives easy start, web fullstack, modern backend. But Java has many enterprise jobs. Need weigh.\n\nQuestion: \"Посоветуй 3 языка программирования для начинающего бэкенд-разработчика и объясни выбор.\" They want advice. Need recommend three. Could say \"Если брать именно стартовый набор: Python, TypeScript (Node.js), Go. Java — сильный вариант, но я бы не ставил первым из-за порога входа.\" This is nuanced. Need explain each: Python: simple syntax, fast start, Django/FastAPI, data/AI integration, many jobs, but performance lower and dynamic typing. TypeScript/JavaScript: one language front+back, Node.js, Express/NestJS, huge ecosystem, async I/O, high demand, but JS quirks; TypeScript adds safety. Go: simple syntax, compiled, fast, strong concurrency, great for microservices/cloud, static typing, but fewer frameworks and less expressive; good second/third language. Maybe mention Java as alternative if targeting enterprise. Need answer in Russian.\n\nNeed include \"не учи все три одновременно\"; choose one primary, then second. Maybe 3 languages but not all at once. Need mention backend fundamentals more important: HTTP, databases, SQL, Git, Linux, APIs, auth, testing, Docker. The languages are tools. Need be clear.\n\nNeed maybe recommend ordering: Python as first, TypeScript as second if web/fullstack, Go as third for growth. Or \"Python, JavaScript/TypeScript, Go\". Explain choice. Include \"Java — если хотите enterprise, но не в топ-3 для начинающего\" maybe. Need not too verbose but enough. Desired oververbosity 5. Need final in Russian.\n\nLet's craft answer:\n\n\"Лучший набор для старта: Python, TypeScript (на Node.js), Go. Но учить последовательно: сначала Python, потом TS или Go.\"\n\n1. Python:\n- Простой синтаксис, быстро к реальным проектам.\n- Django/FastAPI/Flask; ORM, админка, аутентификация.\n- Много вакансий backend/ML/data; хорош для MVP и API.\n- Минусы: динамическая типизация, производительность ниже; для высоконагруженных сервисов чаще не первый выбор.\n- Кому: если хотите быстро начать, делать API, автоматизацию, интеграцию с данными.\n\n2. JavaScript/TypeScript (Node.js):\n- TS — строгая надстройка, снижает ошибки; Node.js позволяет писать backend на том же языке, что frontend.\n- Express/NestJS/Fastify; огромная экосистема, высокая востребованность.\n- Хорош для web-API, realtime, fullstack.\n- Минусы: JS-экосистема шумная, нужна дисциплина; TS надо освоить.\n- Кому: если интересует веб, fullstack, стартапы, продуктовые команды.\n\n3. Go:\n- Простой и компактный язык, статическая типизация, быстрый старт после основ.\n- Отличная конкурентность (goroutines), стандартная библиотека, низкий порог для микросервисов и cloud.\n- Много вакансий в инфраструктуре, финтехе, высоконагруженных API.\n- Минусы: менее выразителен; меньше \"батареек\" для классического CRUD по сравнению с Django/Spring; рынок меньше, чем у Python/JS/Java.\n- Кому: если хотите современный backend, микросервисы, производительность.\n\n\"Почему не Java первым?\" Java отличный enterprise выбор (Spring Boot, много вакансий), но более verbose and сложный старт; можно взять как 4-й/альтернативу, если целитесь в крупные компании. Need mention maybe \"Если в вашем регионе много Java-вакансий — замените Go на Java.\" Good.\n\nNeed final include \"План: выберите один основной (Python или TS), учите SQL/HTTP/Git/Linux/Docker, сделайте 2-3 проекта, потом второй язык.\" Need mention \"не распыляйтесь\".\n\nNeed answer in Russian. Ensure not too long. But desired oververbosity 5. Let's craft final with headings and concise bullets. Need mention \"3 языка\" explicitly. Should we include \"Python, TypeScript, Go\" maybe enough.\n\nNeed maybe answer \"Посоветуй 3 языка\" not \"choose one\". Fine.\n\nNeed include \"TypeScript, а не чистый JavaScript\" because backend with Node. Good.\n\nLet's final.",
+      "latency": 29.6218243000003,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "не JSON: JSONDecodeError: Expecting value (строка 1, столбец 1)"
+    },
+    {
+      "variant": "format",
+      "run": 1,
+      "text": "{\n  \"languages\": [\n    {\"name\": \"Python\", \"reason\": \"Простой и читаемый синтаксис позволяет новичку сосредоточиться на основах бэкенда, а зрелые фреймворки вроде Django и FastAPI и огромная экосистема быстро дают рабочий результат.\"},\n    {\"name\": \"JavaScript (Node.js)\", \"reason\": \"Один язык на фронтенде и бэкенде упрощает обучение, а высокая востребованность на рынке и асинхронная модель делают его практичным выбором для веб-сервисов и API.\"},\n    {\"name\": \"Go\", \"reason\": \"Минималистичный синтаксис и встроенная поддержка конкурентности делают его лёгким для старта и при этом востребованным для высоконагруженных бэкенд-сервисов.\"}\n  ],\n  \"summary\": \"Начать стоит с Python для освоения базовых концепций, затем добавить JavaScript для веб-интеграции и Go для понимания производительных серверных решений.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 364,
+      "reasoning_tokens": 109,
+      "reasoning": "The user wants JSON output with exactly 3 languages and reasons, plus summary. No markdown, no extra text. Let me pick Python, JavaScript (Node.js), and Go — or maybe SQL isn't a language... Python, JavaScript/Node, Java or Go. For a beginner backend dev: Python (simple, huge ecosystem), JavaScript/Node.js (same language front and back, huge demand), Go (simple syntax, strong concurrency, growing backend demand). Write concise reasons in Russian, one sentence each. Summary one sentence.",
+      "latency": 6.328865299999961,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "format",
+      "run": 2,
+      "text": "{\n  \"languages\": [\n    {\n      \"name\": \"Python\",\n      \"reason\": \"Простой синтаксис и большое количество учебных материалов позволяют новичку быстро освоить основы бэкенда и популярные фреймворки вроде Django и FastAPI.\"\n    },\n    {\n      \"name\": \"JavaScript (Node.js)\",\n      \"reason\": \"Один язык можно использовать и на фронтенде, и на бэкенде, а огромная экосистема npm и высокая востребованность упрощают первые проекты и поиск работы.\"\n    },\n    {\n      \"name\": \"Go\",\n      \"reason\": \"Язык отличается лаконичным синтаксисом, строгой типизацией и встроенными средствами для конкурентности, что помогает понять важные принципы построения надёжных серверных приложений.\"\n    }\n  ],\n  \"summary\": \"Для старта в бэкенде оптимально выбрать Python как самый доступный, JavaScript для универсальности и Go для понимания производительных серверных решений.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 318,
+      "reasoning_tokens": 75,
+      "reasoning": "The user wants JSON with 3 languages for beginner backend developer. Need valid JSON, no markdown. Choose Python, JavaScript (Node.js), Go maybe. Reasons one sentence each. Summary one sentence. Must respond strictly JSON.\n\nLet me craft concise reasons in Russian. Exactly 3 elements, fields name and reason only. Summary.\n\nEnsure JSON valid, no trailing commas.",
+      "latency": 4.4571259999993345,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "format",
+      "run": 3,
+      "text": "{\n  \"languages\": [\n    {\n      \"name\": \"Python\",\n      \"reason\": \"Простой синтаксис и обширная экосистема (Django, FastAPI) позволяют новичку быстро освоить основы бэкенда и сосредоточиться на логике, а не на сложных конструкциях языка.\"\n    },\n    {\n      \"name\": \"JavaScript (с TypeScript)\",\n      \"reason\": \"Node.js даёт возможность использовать один язык для фронтенда и бэкенда, а огромное сообщество и npm обеспечивают множество готовых решений и учебных материалов.\"\n    },\n    {\n      \"name\": \"Go\",\n      \"reason\": \"Go отличается лаконичным синтаксисом, строгой типизацией и встроенной поддержкой конкурентности, что помогает начинающему разработчику освоить надёжные и производительные серверные приложения.\"\n    }\n  ],\n  \"summary\": \"Для старта в бэкенде оптимальны Python, JavaScript/TypeScript и Go: они сочетают низкий порог входа с востребованностью на рынке и хорошей базой для изучения серверной разработки.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 345,
+      "reasoning_tokens": 82,
+      "reasoning": "The user wants JSON with 3 languages for beginner backend dev, reasons, and summary. No markdown, no extra text. Must be valid JSON.\n\nChoose Python, JavaScript/TypeScript (Node.js), Go. Reasons one sentence each. Summary one sentence. Language of response: Russian.\n\nEnsure strict JSON, only fields languages and summary. Each language object has name and reason. Exactly 3 elements.",
+      "latency": 5.868027699998493,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "max_tokens",
+      "run": 1,
+      "text": "",
+      "finish_reason": "length",
+      "completion_tokens": 60,
+      "reasoning_tokens": 60,
+      "reasoning": "The user wants JSON with 3 languages for a beginner backend developer, with reasons, and a summary. No markdown, no extra text. Exactly 3 elements, fields name and reason only, plus summary.\n\nPick Python, JavaScript (Node.js), Go — or Java. For beginners: Python",
+      "latency": 2.657296600000336,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: лимит max_tokens съело рассуждение, до JSON модель не дошла"
+    },
+    {
+      "variant": "max_tokens",
+      "run": 2,
+      "text": "",
+      "finish_reason": "length",
+      "completion_tokens": 60,
+      "reasoning_tokens": 60,
+      "reasoning": "We need answer strict JSON. Need recommend 3 languages for beginner backend. Likely Python, JavaScript/TypeScript, Go? Need reasons one sentence each. Summary one sentence. Ensure JSON valid no markdown. Exactly 3 elements. Russian. Need maybe Python, JavaScript/TypeScript, Go",
+      "latency": 3.793307800000548,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: лимит max_tokens съело рассуждение, до JSON модель не дошла"
+    },
+    {
+      "variant": "max_tokens",
+      "run": 3,
+      "text": "",
+      "finish_reason": "length",
+      "completion_tokens": 60,
+      "reasoning_tokens": 60,
+      "reasoning": "We need answer strict JSON no markdown. Need 3 languages for beginner backend, reasons one sentence each, summary one sentence. Need choose likely Python, JavaScript/TypeScript, Go? For beginner backend. Need exactly 3 elements. JSON valid. Russian. No extra. Need maybe Python,",
+      "latency": 3.5259595999996236,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: лимит max_tokens съело рассуждение, до JSON модель не дошла"
+    },
+    {
+      "variant": "stop",
+      "run": 1,
+      "text": "",
+      "finish_reason": "stop",
+      "completion_tokens": 33,
+      "reasoning_tokens": 33,
+      "reasoning": "We need answer strict JSON no markdown no code blocks no text before/after JSON. Need include languages exactly 3. Then after JSON new line",
+      "latency": 3.751479799999288,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: stop sequence сработал внутри рассуждения, до ответа модель не дошла"
+    },
+    {
+      "variant": "stop",
+      "run": 2,
+      "text": "",
+      "finish_reason": "stop",
+      "completion_tokens": 23,
+      "reasoning_tokens": 23,
+      "reasoning": "The user wants JSON only, 3 languages for beginner backend dev, with reasons, summary, then",
+      "latency": 2.8673914000009972,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: stop sequence сработал внутри рассуждения, до ответа модель не дошла"
+    },
+    {
+      "variant": "stop",
+      "run": 3,
+      "text": "",
+      "finish_reason": "stop",
+      "completion_tokens": 26,
+      "reasoning_tokens": 26,
+      "reasoning": "We need answer strict JSON, no markdown, no text before/after JSON? User says immediately after JSON write",
+      "latency": 3.433563900000081,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: stop sequence сработал внутри рассуждения, до ответа модель не дошла"
+    },
+    {
+      "variant": "json_mode",
+      "run": 1,
+      "text": "{\n  \"languages\": [\n    {\"name\": \"Python\", \"reason\": \"Простой и читаемый синтаксис позволяет новичку сосредоточиться на основах бэкенда, а зрелые фреймворки вроде Django и FastAPI ускоряют разработку первых проектов.\"},\n    {\"name\": \"JavaScript (Node.js)\", \"reason\": \"Один язык можно использовать и на фронтенде, и на бэкенде, что упрощает создание полноценных веб-приложений и даёт доступ к огромной экосистеме npm.\"},\n    {\"name\": \"Go\", \"reason\": \"Минималистичный язык с простой конкурентностью и быстрой компиляцией хорошо подходит для изучения современных подходов к созданию масштабируемых серверных сервисов.\"}\n  ],\n  \"summary\": \"Начните с Python для освоения базовых концепций, затем добавьте JavaScript для полноценного веба и Go для понимания производительных и конкурентных бэкенд-систем.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 320,
+      "reasoning_tokens": 81,
+      "reasoning": "The user wants JSON with 3 languages, reasons, summary. Choose Python, JavaScript/TypeScript, Go maybe. Or Python, Node.js (JavaScript), Java. For beginner backend: Python (simple, ecosystem), JavaScript/TypeScript (Node.js, full stack), Go (simple, concurrency, modern backend). Provide reasons one sentence each, summary one sentence. Strict JSON no markdown.",
+      "latency": 5.735448300001735,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "json_mode",
+      "run": 2,
+      "text": "{\n  \"languages\": [\n    {\n      \"name\": \"Python\",\n      \"reason\": \"Он даёт простой и читаемый синтаксис, а также богатую экосистему для быстрого освоения бэкенд-разработки и создания API.\"\n    },\n    {\n      \"name\": \"JavaScript\",\n      \"reason\": \"Благодаря Node.js он позволяет новичку использовать один язык и для фронтенда, и для бэкенда, а вокруг него очень много учебных материалов и готовых решений.\"\n    },\n    {\n      \"name\": \"Java\",\n      \"reason\": \"Он развивает строгое мышление и востребован в крупных компаниях, где на бэкенде часто используют надёжные и масштабируемые приложения.\"\n    }\n  ],\n  \"summary\": \"Для старта лучше всего подойдут Python и JavaScript как самые доступные, а Java стоит выбрать, если вы хотите сразу освоить строгую типизацию и корпоративные технологии.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 374,
+      "reasoning_tokens": 145,
+      "reasoning": "We need answer JSON only. Need recommend 3 languages for beginner backend dev. Exactly 3 elements languages with name, reason one sentence. summary one sentence. Need no markdown. Choose Python, JavaScript/Node.js?, Go? For beginner backend. Common: Python, JavaScript (Node.js), Java? Or Go. Need reasons. We can recommend Python, JavaScript, Go. Or Python, JavaScript, Java. Beginner backend: Python easy, huge ecosystem; JavaScript Node same language front/back; Java enterprise strong typing. Go simple but less beginner? Hmm. Need exactly 3. Let's craft concise Russian. JSON valid. No extra. Ensure one sentence each. Summary one sentence. Use proper quotes.",
+      "latency": 7.666736799999853,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "json_mode",
+      "run": 3,
+      "text": "{\n  \"languages\": [\n    {\"name\": \"Python\", \"reason\": \"Простой синтаксис и большое сообщество делают его удобным для изучения основ бэкенда, а популярные фреймворки вроде Django и FastAPI помогают быстро создавать реальные проекты.\"},\n    {\"name\": \"JavaScript\", \"reason\": \"На Node.js он позволяет разрабатывать бэкенд на том же языке, что и фронтенд, а огромная экосистема и высокая востребованность дают новичку много учебных материалов и вакансий.\"},\n    {\"name\": \"Go\", \"reason\": \"Go отличается простым синтаксисом, хорошей производительностью и встроенными средствами для конкурентности, что делает его полезным для изучения современного бэкенда и микросервисов.\"}\n  ],\n  \"summary\": \"Начинающему бэкенд-разработчику стоит начать с Python или JavaScript для быстрого входа, а Go добавить позже для понимания производительных и конкурентных серверных систем.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 347,
+      "reasoning_tokens": 98,
+      "reasoning": "We need answer strictly JSON specified. Need choose 3 languages for beginner backend, reasons one sentence, summary one sentence. Need no markdown. Russian. Exactly 3 elements, no extra fields. Need valid JSON. Consider Python, JavaScript/TypeScript, Go? For beginner backend. Need reasons. Could choose Python, JavaScript (Node.js), Go. But \"3 language\" for beginner backend. Explain. Need JSON only. Ensure Russian. No code fences. Final only JSON.",
+      "latency": 7.098085899999205,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "schema",
+      "run": 1,
+      "text": "{\n  \"languages\": [\n    {\"name\": \"Python\", \"reason\": \"Простой синтаксис позволяет сосредоточиться на основах бэкенда, а зрелые фреймворки вроде Django и FastAPI и огромная экосистема быстро дают работающие проекты.\"},\n    {\"name\": \"JavaScript (Node.js)\", \"reason\": \"Один язык и на клиенте, и на сервере упрощает обучение, а Node.js с Express или NestJS крайне востребован в веб-разработке.\"},\n    {\"name\": \"Go\", \"reason\": \"Минималистичный язык с простой конкурентностью и строгой типизацией учит писать надёжные сервисы, а спрос на него в бэкенде и инфраструктуре стабильно растёт.\"}\n  ],\n  \"summary\": \"Начните с Python для основ и быстрых результатов, затем освойте JavaScript/Node.js для веба и Go для производительных сервисов — такой набор покрывает большинство вакансий начинающего бэкенд-разработчика.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 354,
+      "reasoning_tokens": 100,
+      "reasoning": "The user wants a JSON response with exactly 3 languages for a beginner backend developer, each with a reason, plus a summary. No markdown. Must be valid JSON, Russian language.\n\nPick: Python (simple, ecosystem), JavaScript/Node.js (one language front+back), Go (simplicity, concurrency, growing backend demand). Or Java? Go is good modern advice. Let's go Python, JavaScript (Node.js), Go.\n\nReasons one sentence each. Summary one sentence.",
+      "latency": 7.042503700000452,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "schema",
+      "run": 2,
+      "text": "{\n  \"languages\": [\n    {\"name\": \"Python\", \"reason\": \"Простой синтаксис и огромная экосистема (Django, FastAPI) позволяют новичку быстро освоить основы бэкенда и сразу писать рабочие API.\"},\n    {\"name\": \"JavaScript\", \"reason\": \"Node.js даёт возможность использовать один язык на фронтенде и бэкенде, а обилие учебных материалов и npm-пакетов ускоряет старт.\"},\n    {\"name\": \"Go\", \"reason\": \"Минималистичный и строго типизированный язык с простой конкурентностью учит аккуратному коду и хорошо подходит для современных высоконагруженных сервисов.\"}\n  ],\n  \"summary\": \"Начните с Python для базовых концепций, затем добавьте JavaScript или Go, чтобы расширить кругозор и познакомиться с разными подходами к бэкенд-разработке.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 248,
+      "reasoning_tokens": 30,
+      "reasoning": "The user wants JSON with exactly 3 languages, each with name and reason, plus summary. Keep it concise, valid JSON, no markdown.",
+      "latency": 4.475520400001187,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "schema",
+      "run": 3,
+      "text": "{\n  \"languages\": [\n    {\"name\": \"Python\", \"reason\": \"Простой синтаксис и огромная экосистема (Django, FastAPI) позволяют новичку быстро освоить основы бэкенда, работу с БД и API, не отвлекаясь на сложности языка.\"},\n    {\"name\": \"JavaScript (Node.js)\", \"reason\": \"Один язык для фронтенда и бэкенда упрощает обучение, а Express/NestJS и npm дают доступ к самой большой библиотечной экосистеме и множеству вакансий.\"},\n    {\"name\": \"Go\", \"reason\": \"Минималистичный и строго типизированный язык с отличной поддержкой конкурентности и простым деплоем, что помогает быстро понять, как устроены производительные сервисы.\"}\n  ],\n  \"summary\": \"Начните с Python для базовых концепций бэкенда, затем освойте JavaScript для full-stack гибкости и Go для понимания производительных и конкурентных серверных решений.\"\n}",
+      "finish_reason": "stop",
+      "completion_tokens": 300,
+      "reasoning_tokens": 59,
+      "reasoning": "The user wants JSON with 3 languages for beginner backend dev, with reasons, and a summary. Exactly the structure. No markdown. Answer in Russian presumably.\n\nPick Python, Go, JavaScript/TypeScript (Node.js). Reasons one sentence each.\n\nNeed valid JSON, no extra text.",
+      "latency": 6.91514449999886,
+      "api_error": null,
+      "json_strict": true,
+      "json_loose": true,
+      "schema_ok": true,
+      "problem": ""
+    },
+    {
+      "variant": "schema_max_tokens",
+      "run": 1,
+      "text": "",
+      "finish_reason": "length",
+      "completion_tokens": 60,
+      "reasoning_tokens": 60,
+      "reasoning": "The user wants JSON with 3 languages for a beginner backend developer, reasons, and a summary. No markdown, no extra text. Must be valid JSON.\n\nChoose Python, JavaScript (Node.js), Go? Or Python, Java, PHP? For beginners backend: Python (easy, Django/F",
+      "latency": 2.8070620999988023,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: лимит max_tokens съело рассуждение, до JSON модель не дошла"
+    },
+    {
+      "variant": "schema_max_tokens",
+      "run": 2,
+      "text": "",
+      "finish_reason": "length",
+      "completion_tokens": 60,
+      "reasoning_tokens": 60,
+      "reasoning": "The user wants JSON with 3 languages for a beginner backend developer, each with a reason, plus a summary. No markdown, no extra text. Let me pick Python, JavaScript (Node.js), Go — or maybe Python, JavaScript, Java. For a beginner backend dev, Python, JavaScript",
+      "latency": 4.189430500000526,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "пустой ответ: лимит max_tokens съело рассуждение, до JSON модель не дошла"
+    },
+    {
+      "variant": "schema_max_tokens",
+      "run": 3,
+      "text": "{\n  \"languages\": [\n   ",
+      "finish_reason": "length",
+      "completion_tokens": 60,
+      "reasoning_tokens": 51,
+      "reasoning": "The user wants JSON with 3 languages for beginner backend developer. Strict JSON, no markdown. Each with name and reason (one sentence), plus summary one sentence. Choose Python, JavaScript (Node.js), Go — reasonable. Reasons concise in Russian.",
+      "latency": 3.7716629000005923,
+      "api_error": null,
+      "json_strict": false,
+      "json_loose": false,
+      "schema_ok": false,
+      "problem": "не JSON — обрезан по лимиту (finish_reason=length): JSONDecodeError: Expecting value (строка 2, столбец 17)"
+    }
+  ]
+}
