@@ -1,0 +1,132 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "date": "2026-11-08T14:09:29",
+  "rows": [
+    {
+      "name": "по умолчанию",
+      "params": {},
+      "accepted": true,
+      "error": null,
+      "reasoning": 212,
+      "completion": 282,
+      "latency": 80.1,
+      "correct": 2
+    },
+    {
+      "name": "reasoning_effort=none",
+      "params": {
+        "reasoning_effort": "none"
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 0,
+      "completion": 422,
+      "latency": 3.9,
+      "correct": 2
+    },
+    {
+      "name": "reasoning_effort=minimal",
+      "params": {
+        "reasoning_effort": "minimal"
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 198,
+      "completion": 286,
+      "latency": 80.0,
+      "correct": 2
+    },
+    {
+      "name": "reasoning_effort=low",
+      "params": {
+        "reasoning_effort": "low"
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 256,
+      "completion": 330,
+      "latency": 3.1,
+      "correct": 2
+    },
+    {
+      "name": "reasoning_effort=high",
+      "params": {
+        "reasoning_effort": "high"
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 277,
+      "completion": 343,
+      "latency": 3.1,
+      "correct": 2
+    },
+    {
+      "name": "reasoning_effort=max",
+      "params": {
+        "reasoning_effort": "max"
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 397,
+      "completion": 516,
+      "latency": 5.1,
+      "correct": 2
+    },
+    {
+      "name": "reasoning.effort=low",
+      "params": {
+        "reasoning": {
+          "effort": "low"
+        }
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 352,
+      "completion": 422,
+      "latency": 80.8,
+      "correct": 2
+    },
+    {
+      "name": "reasoning.effort=high",
+      "params": {
+        "reasoning": {
+          "effort": "high"
+        }
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 174,
+      "completion": 245,
+      "latency": 80.1,
+      "correct": 2
+    },
+    {
+      "name": "thinking=disabled",
+      "params": {
+        "thinking": {
+          "type": "disabled"
+        }
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 0,
+      "completion": 342,
+      "latency": 3.1,
+      "correct": 2
+    },
+    {
+      "name": "thinking=enabled",
+      "params": {
+        "thinking": {
+          "type": "enabled"
+        }
+      },
+      "accepted": true,
+      "error": null,
+      "reasoning": 214,
+      "completion": 243,
+      "latency": 2.8,
+      "correct": 2
+    }
+  ]
+}
