@@ -38,7 +38,8 @@ deepseek-v4.1-flash | токены: 31/24 | 1.42 с
 
 ```powershell
 $key = ((Get-Content .env) -match '^OPENCODE_API_KEY=')[0].Split('=', 2)[1]
-$h = @{ Authorization = "Bearer $key"; "User-Agent" = "ai-challenge-cli/0.1" }
+$h = @{ Authorization = "Bearer $key"; "User-Agent" = "ai-challenge-cli/0.1"
+        "x-opencode-session" = [guid]::NewGuid().ToString("N") }   # без него OpenCode Go отвечает 400
 
 # список моделей
 (Invoke-RestMethod https://opencode.ai/inference/go/v1/models -Headers $h).data.id

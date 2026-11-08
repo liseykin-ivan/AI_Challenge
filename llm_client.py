@@ -1,5 +1,6 @@
 """Клиент OpenAI-совместимого Chat Completions API на голом httpx."""
 import time
+import uuid
 from dataclasses import dataclass
 
 import httpx
@@ -20,17 +21,21 @@ class ChatResult:
 
 
 class LLMClient:
-    def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 60.0):
+    def __init__(self, base_url: str, api_key: str, model: str, timeout: float = 60.0,
+                 session_id: str | None = None):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
+        # OpenCode Go требует стабильный ID диалога: по нему он маршрутизирует и кэширует запросы.
+        self.session_id = session_id or uuid.uuid4().hex
 
     def chat(self, messages: list[dict]) -> ChatResult:
         url = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "User-Agent": USER_AGENT,
+            "x-opencode-session": self.session_id,
         }
         payload = {"model": self.model, "messages": messages}
 
