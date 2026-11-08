@@ -68,6 +68,8 @@ class LLMClient:
         code = response.status_code
         if code in (401, 403):
             message = "ключ не принят. Проверьте OPENCODE_API_KEY в .env."
+        elif code == 400:
+            message = f"запрос отклонён. Часто причина — модель «{self.model}» недоступна для вашего аккаунта."
         elif code == 404:
             message = f"не найдено: проверьте модель «{self.model}» и LLM_BASE_URL."
         elif code == 429:
