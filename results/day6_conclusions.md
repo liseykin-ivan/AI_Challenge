@@ -1,4 +1,4 @@
-# Неделя 2 · День 1 — Первый агент: выводы
+# День 6 — Первый агент: выводы
 
 Код: `day6_agent.py`. Модель: `deepseek-v4.1-flash` (OpenCode Go), function calling через поле `tools`
 OpenAI-совместимого API. Прогон: `results/day6_20261115_211728.md` / `.json` (вся история сообщений).
