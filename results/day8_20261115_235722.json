@@ -1,0 +1,2592 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "prices": {
+    "deepseek-v4.1-flash": {
+      "off-peak": {
+        "input": 0.15,
+        "output": 0.6,
+        "cached": 0.003
+      },
+      "peak": {
+        "input": 0.3,
+        "output": 1.2,
+        "cached": 0.006
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": {
+        "id": "short",
+        "title": "короткий диалог",
+        "about": "3 хода, два из них с инструментами",
+        "window": null,
+        "policy": "none"
+      },
+      "ok": true,
+      "note": "все ходы без ошибок, инструменты вызваны",
+      "window": 1000000,
+      "totals": {
+        "turns": 3,
+        "prompt": 4500,
+        "completion": 258,
+        "cached": 3200,
+        "cost": 0.00035939999999999995
+      },
+      "estimator_factor": 1.1905,
+      "turns": [
+        {
+          "n": 1,
+          "user": "Привет! Кто ты и что умеешь? Ответь в двух предложениях.",
+          "user_tokens": 17,
+          "history_before": 119,
+          "history_after": 259,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 579,
+              "prompt": 724,
+              "completion": 71,
+              "cached": 0,
+              "reasoning": 0,
+              "cost": 0.0001512,
+              "latency": 3.638906999998653,
+              "finish_reason": "stop",
+              "sent_messages": 2,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 724,
+                "completion_tokens": 71,
+                "total_tokens": 795,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.0001512,
+                  "allowance": 0.00018144,
+                  "tokens": {
+                    "input": 724,
+                    "output": 71,
+                    "reasoning": 0,
+                    "cache_read": 0,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Привет! Я полезный ассистент-агент: отвечаю на вопросы, считаю через калькулятор, перевожу валюты и подсказываю текущее время и дату. Могу также помочь с текстами, объяснениями и планированием — спрашивай!",
+          "factor": 1.2505,
+          "last_estimate": 579,
+          "cost": 0.0001512,
+          "context": 795
+        },
+        {
+          "n": 2,
+          "user": "Который час сейчас в Токио?",
+          "user_tokens": 10,
+          "history_before": 259,
+          "history_after": 438,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 822,
+              "prompt": 808,
+              "completion": 53,
+              "cached": 640,
+              "reasoning": 9,
+              "cost": 5.891999999999999e-05,
+              "latency": 4.05574279999928,
+              "finish_reason": "tool_calls",
+              "sent_messages": 4,
+              "max_tokens": null,
+              "tool_calls": 1,
+              "usage_raw": {
+                "prompt_tokens": 808,
+                "completion_tokens": 53,
+                "total_tokens": 861,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 9
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 5.892e-05,
+                  "allowance": 7.07e-05,
+                  "tokens": {
+                    "input": 168,
+                    "output": 53,
+                    "reasoning": 9,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            },
+            {
+              "step": 2,
+              "estimate": 960,
+              "prompt": 915,
+              "completion": 32,
+              "cached": 768,
+              "reasoning": 0,
+              "cost": 4.3554000000000003e-05,
+              "latency": 3.059531999999308,
+              "finish_reason": "stop",
+              "sent_messages": 6,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 915,
+                "completion_tokens": 32,
+                "total_tokens": 947,
+                "prompt_tokens_details": {
+                  "cached_tokens": 768
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 4.355e-05,
+                  "allowance": 5.226e-05,
+                  "tokens": {
+                    "input": 147,
+                    "output": 32,
+                    "reasoning": 0,
+                    "cache_read": 768,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Сейчас в Токио 05:57 утра, понедельник, 16 ноября 2026 года (UTC+9).",
+          "factor": 1.2107,
+          "last_estimate": 960,
+          "cost": 0.000102474,
+          "context": 947
+        },
+        {
+          "n": 3,
+          "user": "Спасибо! А сколько рублей стоят 20 евро?",
+          "user_tokens": 15,
+          "history_before": 438,
+          "history_after": 598,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 979,
+              "prompt": 965,
+              "completion": 77,
+              "cached": 896,
+              "reasoning": 0,
+              "cost": 5.9238e-05,
+              "latency": 4.1883381999996345,
+              "finish_reason": "tool_calls",
+              "sent_messages": 8,
+              "max_tokens": null,
+              "tool_calls": 1,
+              "usage_raw": {
+                "prompt_tokens": 965,
+                "completion_tokens": 77,
+                "total_tokens": 1042,
+                "prompt_tokens_details": {
+                  "cached_tokens": 896
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 5.924e-05,
+                  "allowance": 7.109e-05,
+                  "tokens": {
+                    "input": 69,
+                    "output": 77,
+                    "reasoning": 0,
+                    "cache_read": 896,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            },
+            {
+              "step": 2,
+              "estimate": 1109,
+              "prompt": 1088,
+              "completion": 25,
+              "cached": 896,
+              "reasoning": 0,
+              "cost": 4.6488e-05,
+              "latency": 4.033983299999818,
+              "finish_reason": "stop",
+              "sent_messages": 10,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 1088,
+                "completion_tokens": 25,
+                "total_tokens": 1113,
+                "prompt_tokens_details": {
+                  "cached_tokens": 896
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 4.649e-05,
+                  "allowance": 5.579e-05,
+                  "tokens": {
+                    "input": 192,
+                    "output": 25,
+                    "reasoning": 0,
+                    "cache_read": 896,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "20 евро ≈ 1 884 рубля (курс 94,2 ₽ за евро).",
+          "factor": 1.1905,
+          "last_estimate": 1109,
+          "cost": 0.000105726,
+          "context": 1113
+        }
+      ],
+      "history_file": "day8_short_20261115_235722.json"
+    },
+    {
+      "scenario": {
+        "id": "long",
+        "title": "длинный диалог",
+        "about": "факт в начале, 10 отчётов склада по ~750 токенов, вопрос о факте",
+        "window": null,
+        "policy": "none"
+      },
+      "ok": true,
+      "note": "контекст растёт каждый ход, факт из хода 1 помнит",
+      "window": 1000000,
+      "totals": {
+        "turns": 12,
+        "prompt": 74020,
+        "completion": 689,
+        "cached": 63104,
+        "cost": 0.002240112
+      },
+      "estimator_factor": 1.4703,
+      "turns": [
+        {
+          "n": 1,
+          "user": "Запомни, это понадобится в конце: номер моего заказа — 7341-ZX, кодовое слово — «бергамот». Ответь одним словом: «Запомнил».",
+          "user_tokens": 41,
+          "history_before": 119,
+          "history_after": 213,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 603,
+              "prompt": 750,
+              "completion": 7,
+              "cached": 640,
+              "reasoning": 0,
+              "cost": 2.262e-05,
+              "latency": 2.8355953999998746,
+              "finish_reason": "stop",
+              "sent_messages": 2,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 750,
+                "completion_tokens": 7,
+                "total_tokens": 757,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 2.262e-05,
+                  "allowance": 2.714e-05,
+                  "tokens": {
+                    "input": 110,
+                    "output": 7,
+                    "reasoning": 0,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Запомнил.",
+          "factor": 1.2443,
+          "last_estimate": 603,
+          "cost": 2.262e-05,
+          "context": 757
+        },
+        {
+          "n": 2,
+          "user": "Отчёт склада №1 за 4 ноября 2026 г. Ответственный: смена Б.\n01. розетка двойная — 139 шт по 6498.04 ₽, поставщик «ЭлектроСнаб», ячейка В-7, приход 6.11.\n02. клеммник WAGO на 3 провода — 18 уп по 215.56 ₽, поставщик «СветоПро», ячейка А-25, приход 11.11.\n03. гофротруба 20 мм — 113 м по 8721.83 ₽, поставщик «Северная линия», ячейка В-15, приход 13.11.\n04. УЗО 40 А 30 мА — 227 шт по 8453.42 ₽, постав… (+1 541 символов)",
+          "user_tokens": 799,
+          "history_before": 213,
+          "history_after": 1190,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 1563,
+              "prompt": 1688,
+              "completion": 130,
+              "cached": 640,
+              "reasoning": 101,
+              "cost": 0.00023711999999999998,
+              "latency": 5.956663400000252,
+              "finish_reason": "stop",
+              "sent_messages": 4,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 1688,
+                "completion_tokens": 130,
+                "total_tokens": 1818,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 101
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00023712,
+                  "allowance": 0.00028454,
+                  "tokens": {
+                    "input": 1048,
+                    "output": 130,
+                    "reasoning": 101,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 03 — гофротруба 20 мм, 8721.83 ₽ за единицу.",
+          "factor": 1.2938,
+          "last_estimate": 1563,
+          "cost": 0.00023711999999999998,
+          "context": 1818
+        },
+        {
+          "n": 3,
+          "user": "Отчёт склада №2 за 5 ноября 2026 г. Ответственный: смена А.\n01. розетка двойная — 281 шт по 8422.37 ₽, поставщик «СветоПро», ячейка Б-3, приход 14.11.\n02. счётчик электроэнергии — 17 шт по 3285.67 ₽, поставщик «Вольт-Трейд», ячейка Б-28, приход 9.11.\n03. дифавтомат 25 А — 87 шт по 5051.19 ₽, поставщик «ЭлектроСнаб», ячейка А-2, приход 3.11.\n04. стабилизатор напряжения 5 кВт — 169 шт по 1574.69 ₽, … (+1 539 символов)",
+          "user_tokens": 829,
+          "history_before": 1190,
+          "history_after": 2119,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 2487,
+              "prompt": 2757,
+              "completion": 97,
+              "cached": 1664,
+              "reasoning": 68,
+              "cost": 0.00022714199999999997,
+              "latency": 6.055433700001231,
+              "finish_reason": "stop",
+              "sent_messages": 6,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 2757,
+                "completion_tokens": 97,
+                "total_tokens": 2854,
+                "prompt_tokens_details": {
+                  "cached_tokens": 1664
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 68
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00022714,
+                  "allowance": 0.00027257,
+                  "tokens": {
+                    "input": 1093,
+                    "output": 97,
+                    "reasoning": 68,
+                    "cache_read": 1664,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 12 — кабель-канал 40×25, 8616.89 ₽ за единицу.",
+          "factor": 1.3641,
+          "last_estimate": 2487,
+          "cost": 0.00022714199999999997,
+          "context": 2854
+        },
+        {
+          "n": 4,
+          "user": "Отчёт склада №3 за 6 ноября 2026 г. Ответственный: смена Б.\n01. счётчик электроэнергии — 206 шт по 5757.03 ₽, поставщик «ЭлектроСнаб», ячейка А-10, приход 14.11.\n02. светильник LED 36 Вт — 270 шт по 3518.58 ₽, поставщик «Северная линия», ячейка В-5, приход 3.11.\n03. дифавтомат 25 А — 391 шт по 8618.11 ₽, поставщик «Северная линия», ячейка Б-2, приход 14.11.\n04. изолента ПВХ 19 мм — 140 шт по 4262.… (+1 570 символов)",
+          "user_tokens": 885,
+          "history_before": 2119,
+          "history_after": 3119,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 3543,
+              "prompt": 3788,
+              "completion": 72,
+              "cached": 2688,
+              "reasoning": 44,
+              "cost": 0.00021626399999999997,
+              "latency": 3.172285300001022,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 3788,
+                "completion_tokens": 72,
+                "total_tokens": 3860,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2688
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 44
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00021626,
+                  "allowance": 0.00025952,
+                  "tokens": {
+                    "input": 1100,
+                    "output": 72,
+                    "reasoning": 44,
+                    "cache_read": 2688,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 03 — дифавтомат 25 А, 8618.11 ₽ за единицу.",
+          "factor": 1.4113,
+          "last_estimate": 3543,
+          "cost": 0.00021626399999999997,
+          "context": 3860
+        },
+        {
+          "n": 5,
+          "user": "Отчёт склада №4 за 7 ноября 2026 г. Ответственный: смена Б.\n01. кабель-канал 40×25 — 137 м по 1941.39 ₽, поставщик «Северная линия», ячейка В-17, приход 13.11.\n02. гофротруба 20 мм — 142 м по 1753.02 ₽, поставщик «Вольт-Трейд», ячейка Б-24, приход 2.11.\n03. лампа E27 12 Вт — 313 шт по 3046.56 ₽, поставщик «Ампер и сыновья», ячейка В-16, приход 3.11.\n04. УЗО 40 А 30 мА — 129 шт по 4270.19 ₽, постав… (+1 547 символов)",
+          "user_tokens": 912,
+          "history_before": 3119,
+          "history_after": 4121,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4612,
+              "prompt": 4797,
+              "completion": 47,
+              "cached": 3712,
+              "reasoning": 14,
+              "cost": 0.00020208599999999998,
+              "latency": 2.6317237000002933,
+              "finish_reason": "stop",
+              "sent_messages": 10,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4797,
+                "completion_tokens": 47,
+                "total_tokens": 4844,
+                "prompt_tokens_details": {
+                  "cached_tokens": 3712
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 14
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00020209,
+                  "allowance": 0.0002425,
+                  "tokens": {
+                    "input": 1085,
+                    "output": 47,
+                    "reasoning": 14,
+                    "cache_read": 3712,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 08 — кабель медный ВВГ 3×2,5, 8977.29 ₽ за единицу.",
+          "factor": 1.4396,
+          "last_estimate": 4612,
+          "cost": 0.00020208599999999998,
+          "context": 4844
+        },
+        {
+          "n": 6,
+          "user": "Отчёт склада №5 за 8 ноября 2026 г. Ответственный: смена В.\n01. дифавтомат 25 А — 9 шт по 6584.69 ₽, поставщик «Ампер и сыновья», ячейка Б-12, приход 14.11.\n02. удлинитель 5 м на 4 гнезда — 395 шт по 3514.09 ₽, поставщик «Северная линия», ячейка А-40, приход 10.11.\n03. кабель медный ВВГ 3×2,5 — 230 м по 1153.39 ₽, поставщик «Северная линия», ячейка А-14, приход 13.11.\n04. стабилизатор напряжения 5… (+1 556 символов)",
+          "user_tokens": 931,
+          "history_before": 4121,
+          "history_after": 5141,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 5675,
+              "prompt": 5783,
+              "completion": 43,
+              "cached": 4736,
+              "reasoning": 14,
+              "cost": 0.00019705799999999998,
+              "latency": 3.046597099999417,
+              "finish_reason": "stop",
+              "sent_messages": 12,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 5783,
+                "completion_tokens": 43,
+                "total_tokens": 5826,
+                "prompt_tokens_details": {
+                  "cached_tokens": 4736
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 14
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00019706,
+                  "allowance": 0.00023647,
+                  "tokens": {
+                    "input": 1047,
+                    "output": 43,
+                    "reasoning": 14,
+                    "cache_read": 4736,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 04 — стабилизатор напряжения 5 кВт, 8641.74 ₽ за единицу.",
+          "factor": 1.4533,
+          "last_estimate": 5675,
+          "cost": 0.00019705799999999998,
+          "context": 5826
+        },
+        {
+          "n": 7,
+          "user": "Отчёт склада №6 за 9 ноября 2026 г. Ответственный: смена А.\n01. датчик движения — 291 шт по 4989.23 ₽, поставщик «Вольт-Трейд», ячейка В-40, приход 11.11.\n02. клеммник WAGO на 3 провода — 48 уп по 7600.88 ₽, поставщик «Вольт-Трейд», ячейка А-24, приход 13.11.\n03. автоматический выключатель 16 А — 212 шт по 7245.96 ₽, поставщик «Ампер и сыновья», ячейка В-7, приход 13.11.\n04. кабель медный ВВГ 3×2,… (+1 532 символов)",
+          "user_tokens": 933,
+          "history_before": 5141,
+          "history_after": 6143,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 6703,
+              "prompt": 6761,
+              "completion": 50,
+              "cached": 5760,
+              "reasoning": 21,
+              "cost": 0.00019743,
+              "latency": 3.4189411000006658,
+              "finish_reason": "stop",
+              "sent_messages": 14,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 6761,
+                "completion_tokens": 50,
+                "total_tokens": 6811,
+                "prompt_tokens_details": {
+                  "cached_tokens": 5760
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 21
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00019743,
+                  "allowance": 0.00023692,
+                  "tokens": {
+                    "input": 1001,
+                    "output": 50,
+                    "reasoning": 21,
+                    "cache_read": 5760,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 13 — гофротруба 20 мм, 8998.91 ₽ за единицу.",
+          "factor": 1.4596,
+          "last_estimate": 6703,
+          "cost": 0.00019743,
+          "context": 6811
+        },
+        {
+          "n": 8,
+          "user": "Отчёт склада №7 за 10 ноября 2026 г. Ответственный: смена В.\n01. светильник LED 36 Вт — 285 шт по 3829.30 ₽, поставщик «СветоПро», ячейка А-15, приход 11.11.\n02. лампа E27 12 Вт — 324 шт по 5253.23 ₽, поставщик «Северная линия», ячейка В-38, приход 7.11.\n03. автоматический выключатель 16 А — 28 шт по 8786.65 ₽, поставщик «Северная линия», ячейка В-9, приход 5.11.\n04. датчик движения — 217 шт по 13… (+1 535 символов)",
+          "user_tokens": 934,
+          "history_before": 6143,
+          "history_after": 7141,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 7703,
+              "prompt": 7740,
+              "completion": 59,
+              "cached": 6656,
+              "reasoning": 30,
+              "cost": 0.000217968,
+              "latency": 3.9580862000002526,
+              "finish_reason": "stop",
+              "sent_messages": 16,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 7740,
+                "completion_tokens": 59,
+                "total_tokens": 7799,
+                "prompt_tokens_details": {
+                  "cached_tokens": 6656
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 30
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00021797,
+                  "allowance": 0.00026156,
+                  "tokens": {
+                    "input": 1084,
+                    "output": 59,
+                    "reasoning": 30,
+                    "cache_read": 6656,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 11 — гофротруба 20 мм, 8821.87 ₽ за единицу.",
+          "factor": 1.4631,
+          "last_estimate": 7703,
+          "cost": 0.000217968,
+          "context": 7799
+        },
+        {
+          "n": 9,
+          "user": "Отчёт склада №8 за 11 ноября 2026 г. Ответственный: смена Б.\n01. дифавтомат 25 А — 256 шт по 5164.53 ₽, поставщик «Ампер и сыновья», ячейка А-32, приход 4.11.\n02. лампа E27 12 Вт — 391 шт по 194.62 ₽, поставщик «Вольт-Трейд», ячейка В-27, приход 8.11.\n03. светильник LED 36 Вт — 197 шт по 6538.13 ₽, поставщик «Вольт-Трейд», ячейка А-5, приход 7.11.\n04. гофротруба 20 мм — 320 м по 7468.35 ₽, поставщ… (+1 541 символов)",
+          "user_tokens": 940,
+          "history_before": 7141,
+          "history_after": 8137,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 8698,
+              "prompt": 8733,
+              "completion": 55,
+              "cached": 7680,
+              "reasoning": 26,
+              "cost": 0.00021398999999999998,
+              "latency": 4.56497649999983,
+              "finish_reason": "stop",
+              "sent_messages": 18,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 8733,
+                "completion_tokens": 55,
+                "total_tokens": 8788,
+                "prompt_tokens_details": {
+                  "cached_tokens": 7680
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 26
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00021399,
+                  "allowance": 0.00025679,
+                  "tokens": {
+                    "input": 1053,
+                    "output": 55,
+                    "reasoning": 26,
+                    "cache_read": 7680,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 16 — стабилизатор напряжения 5 кВт, 8393.91 ₽ за единицу.",
+          "factor": 1.4661,
+          "last_estimate": 8698,
+          "cost": 0.00021398999999999998,
+          "context": 8788
+        },
+        {
+          "n": 10,
+          "user": "Отчёт склада №9 за 12 ноября 2026 г. Ответственный: смена Г.\n01. дифавтомат 25 А — 363 шт по 8516.75 ₽, поставщик «Ампер и сыновья», ячейка А-11, приход 4.11.\n02. клеммник WAGO на 3 провода — 29 уп по 1011.86 ₽, поставщик «СветоПро», ячейка В-5, приход 13.11.\n03. светильник LED 36 Вт — 355 шт по 3462.23 ₽, поставщик «Северная линия», ячейка Б-14, приход 11.11.\n04. розетка двойная — 117 шт по 6535.… (+1 546 символов)",
+          "user_tokens": 940,
+          "history_before": 8137,
+          "history_after": 9118,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 9698,
+              "prompt": 9715,
+              "completion": 53,
+              "cached": 8704,
+              "reasoning": 24,
+              "cost": 0.00020956200000000002,
+              "latency": 4.136454199999207,
+              "finish_reason": "stop",
+              "sent_messages": 20,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 9715,
+                "completion_tokens": 53,
+                "total_tokens": 9768,
+                "prompt_tokens_details": {
+                  "cached_tokens": 8704
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 24
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00020956,
+                  "allowance": 0.00025147,
+                  "tokens": {
+                    "input": 1011,
+                    "output": 53,
+                    "reasoning": 24,
+                    "cache_read": 8704,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 14 — лампа E27 12 Вт, 8981.71 ₽ за единицу.",
+          "factor": 1.4674,
+          "last_estimate": 9698,
+          "cost": 0.00020956200000000002,
+          "context": 9768
+        },
+        {
+          "n": 11,
+          "user": "Отчёт склада №10 за 13 ноября 2026 г. Ответственный: смена А.\n01. стабилизатор напряжения 5 кВт — 311 шт по 3205.41 ₽, поставщик «Ампер и сыновья», ячейка Б-17, приход 8.11.\n02. датчик движения — 92 шт по 6177.47 ₽, поставщик «Вольт-Трейд», ячейка А-30, приход 13.11.\n03. кабель медный ВВГ 3×2,5 — 125 м по 8724.95 ₽, поставщик «СветоПро», ячейка Б-3, приход 10.11.\n04. гофротруба 20 мм — 5 м по 2132… (+1 544 символов)",
+          "user_tokens": 945,
+          "history_before": 9118,
+          "history_after": 10112,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 10687,
+              "prompt": 10710,
+              "completion": 55,
+              "cached": 9600,
+              "reasoning": 26,
+              "cost": 0.00022830000000000002,
+              "latency": 4.11621439999908,
+              "finish_reason": "stop",
+              "sent_messages": 22,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 10710,
+                "completion_tokens": 55,
+                "total_tokens": 10765,
+                "prompt_tokens_details": {
+                  "cached_tokens": 9600
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 26
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.0002283,
+                  "allowance": 0.00027396,
+                  "tokens": {
+                    "input": 1110,
+                    "output": 55,
+                    "reasoning": 26,
+                    "cache_read": 9600,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 11 — лампа E27 12 Вт, 8734.82 ₽ за единицу.",
+          "factor": 1.469,
+          "last_estimate": 10687,
+          "cost": 0.00022830000000000002,
+          "context": 10765
+        },
+        {
+          "n": 12,
+          "user": "Напомни, какой у меня номер заказа и кодовое слово? Ответь по истории диалога, инструменты не вызывай.",
+          "user_tokens": 45,
+          "history_before": 10112,
+          "history_after": 10172,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 10779,
+              "prompt": 10798,
+              "completion": 21,
+              "cached": 10624,
+              "reasoning": 0,
+              "cost": 7.057199999999999e-05,
+              "latency": 2.946861099999296,
+              "finish_reason": "stop",
+              "sent_messages": 24,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 10798,
+                "completion_tokens": 21,
+                "total_tokens": 10819,
+                "prompt_tokens_details": {
+                  "cached_tokens": 10624
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 7.057e-05,
+                  "allowance": 8.469e-05,
+                  "tokens": {
+                    "input": 174,
+                    "output": 21,
+                    "reasoning": 0,
+                    "cache_read": 10624,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Заказ № 7341-ZX, кодовое слово — «бергамот».",
+          "factor": 1.4703,
+          "last_estimate": 10779,
+          "cost": 7.057199999999999e-05,
+          "context": 10819
+        }
+      ],
+      "history_file": "day8_long_20261115_235722.json"
+    },
+    {
+      "scenario": {
+        "id": "overflow_none",
+        "title": "переполнение окна, без защиты",
+        "about": "тот же длинный диалог + просьба о длинном ответе, окно 6 000 (эмуляция)",
+        "window": 6000,
+        "policy": "none"
+      },
+      "ok": true,
+      "note": "отклонены ходы 7, 8, 9, 10, 11, 13; ответ обрезан в ходах 12; на вопрос о факте не ответил",
+      "window": 6000,
+      "totals": {
+        "turns": 13,
+        "prompt": 24966,
+        "completion": 579,
+        "cached": 19584,
+        "cost": 0.0012134519999999998
+      },
+      "estimator_factor": 1.433,
+      "turns": [
+        {
+          "n": 1,
+          "user": "Запомни, это понадобится в конце: номер моего заказа — 7341-ZX, кодовое слово — «бергамот». Ответь одним словом: «Запомнил».",
+          "user_tokens": 41,
+          "history_before": 119,
+          "history_after": 212,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 603,
+              "prompt": 750,
+              "completion": 6,
+              "cached": 640,
+              "reasoning": 0,
+              "cost": 2.2020000000000003e-05,
+              "latency": 3.283922500000699,
+              "finish_reason": "stop",
+              "sent_messages": 2,
+              "max_tokens": 5397,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 750,
+                "completion_tokens": 6,
+                "total_tokens": 756,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 2.202e-05,
+                  "allowance": 2.642e-05,
+                  "tokens": {
+                    "input": 110,
+                    "output": 6,
+                    "reasoning": 0,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Запомнил",
+          "factor": 1.2443,
+          "last_estimate": 603,
+          "cost": 2.2020000000000003e-05,
+          "context": 756
+        },
+        {
+          "n": 2,
+          "user": "Отчёт склада №1 за 4 ноября 2026 г. Ответственный: смена Б.\n01. розетка двойная — 139 шт по 6498.04 ₽, поставщик «ЭлектроСнаб», ячейка В-7, приход 6.11.\n02. клеммник WAGO на 3 провода — 18 уп по 215.56 ₽, поставщик «СветоПро», ячейка А-25, приход 11.11.\n03. гофротруба 20 мм — 113 м по 8721.83 ₽, поставщик «Северная линия», ячейка В-15, приход 13.11.\n04. УЗО 40 А 30 мА — 227 шт по 8453.42 ₽, постав… (+1 541 символов)",
+          "user_tokens": 799,
+          "history_before": 212,
+          "history_after": 1151,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 1563,
+              "prompt": 1687,
+              "completion": 99,
+              "cached": 640,
+              "reasoning": 74,
+              "cost": 0.00021836999999999998,
+              "latency": 4.618265299999621,
+              "finish_reason": "stop",
+              "sent_messages": 4,
+              "max_tokens": 4437,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 1687,
+                "completion_tokens": 99,
+                "total_tokens": 1786,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 74
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00021837,
+                  "allowance": 0.00026204,
+                  "tokens": {
+                    "input": 1047,
+                    "output": 99,
+                    "reasoning": 74,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "03. гофротруба 20 мм — 8721.83 ₽ за единицу.",
+          "factor": 1.2938,
+          "last_estimate": 1563,
+          "cost": 0.00021836999999999998,
+          "context": 1786
+        },
+        {
+          "n": 3,
+          "user": "Отчёт склада №2 за 5 ноября 2026 г. Ответственный: смена А.\n01. розетка двойная — 281 шт по 8422.37 ₽, поставщик «СветоПро», ячейка Б-3, приход 14.11.\n02. счётчик электроэнергии — 17 шт по 3285.67 ₽, поставщик «Вольт-Трейд», ячейка Б-28, приход 9.11.\n03. дифавтомат 25 А — 87 шт по 5051.19 ₽, поставщик «ЭлектроСнаб», ячейка А-2, приход 3.11.\n04. стабилизатор напряжения 5 кВт — 169 шт по 1574.69 ₽, … (+1 539 символов)",
+          "user_tokens": 829,
+          "history_before": 1151,
+          "history_after": 2072,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 2483,
+              "prompt": 2725,
+              "completion": 63,
+              "cached": 1664,
+              "reasoning": 38,
+              "cost": 0.000201942,
+              "latency": 5.385037099998954,
+              "finish_reason": "stop",
+              "sent_messages": 6,
+              "max_tokens": 3517,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 2725,
+                "completion_tokens": 63,
+                "total_tokens": 2788,
+                "prompt_tokens_details": {
+                  "cached_tokens": 1664
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 38
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00020194,
+                  "allowance": 0.00024233,
+                  "tokens": {
+                    "input": 1061,
+                    "output": 63,
+                    "reasoning": 38,
+                    "cache_read": 1664,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "12. кабель-канал 40×25 — 8616.89 ₽ за единицу.",
+          "factor": 1.3569,
+          "last_estimate": 2483,
+          "cost": 0.000201942,
+          "context": 2788
+        },
+        {
+          "n": 4,
+          "user": "Отчёт склада №3 за 6 ноября 2026 г. Ответственный: смена Б.\n01. счётчик электроэнергии — 206 шт по 5757.03 ₽, поставщик «ЭлектроСнаб», ячейка А-10, приход 14.11.\n02. светильник LED 36 Вт — 270 шт по 3518.58 ₽, поставщик «Северная линия», ячейка В-5, приход 3.11.\n03. дифавтомат 25 А — 391 шт по 8618.11 ₽, поставщик «Северная линия», ячейка Б-2, приход 14.11.\n04. изолента ПВХ 19 мм — 140 шт по 4262.… (+1 570 символов)",
+          "user_tokens": 880,
+          "history_before": 2072,
+          "history_after": 3032,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 3517,
+              "prompt": 3722,
+              "completion": 24,
+              "cached": 2688,
+              "reasoning": 0,
+              "cost": 0.00017756399999999998,
+              "latency": 3.408131100000901,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 2483,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 3722,
+                "completion_tokens": 24,
+                "total_tokens": 3746,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2688
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00017756,
+                  "allowance": 0.00021308,
+                  "tokens": {
+                    "input": 1034,
+                    "output": 24,
+                    "reasoning": 0,
+                    "cache_read": 2688,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "03. дифавтомат 25 А — 8618.11 ₽ за единицу.",
+          "factor": 1.3965,
+          "last_estimate": 3517,
+          "cost": 0.00017756399999999998,
+          "context": 3746
+        },
+        {
+          "n": 5,
+          "user": "Отчёт склада №4 за 7 ноября 2026 г. Ответственный: смена Б.\n01. кабель-канал 40×25 — 137 м по 1941.39 ₽, поставщик «Северная линия», ячейка В-17, приход 13.11.\n02. гофротруба 20 мм — 142 м по 1753.02 ₽, поставщик «Вольт-Трейд», ячейка Б-24, приход 2.11.\n03. лампа E27 12 Вт — 313 шт по 3046.56 ₽, поставщик «Ампер и сыновья», ячейка В-16, приход 3.11.\n04. УЗО 40 А 30 мА — 129 шт по 4270.19 ₽, постав… (+1 547 символов)",
+          "user_tokens": 902,
+          "history_before": 3032,
+          "history_after": 4026,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4553,
+              "prompt": 4683,
+              "completion": 29,
+              "cached": 3712,
+              "reasoning": 0,
+              "cost": 0.000174186,
+              "latency": 4.427660100000139,
+              "finish_reason": "stop",
+              "sent_messages": 10,
+              "max_tokens": 1447,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4683,
+                "completion_tokens": 29,
+                "total_tokens": 4712,
+                "prompt_tokens_details": {
+                  "cached_tokens": 3712
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00017419,
+                  "allowance": 0.00020902,
+                  "tokens": {
+                    "input": 971,
+                    "output": 29,
+                    "reasoning": 0,
+                    "cache_read": 3712,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "08. кабель медный ВВГ 3×2,5 — 8977.29 ₽ за единицу.",
+          "factor": 1.4165,
+          "last_estimate": 4553,
+          "cost": 0.000174186,
+          "context": 4712
+        },
+        {
+          "n": 6,
+          "user": "Отчёт склада №5 за 8 ноября 2026 г. Ответственный: смена В.\n01. дифавтомат 25 А — 9 шт по 6584.69 ₽, поставщик «Ампер и сыновья», ячейка Б-12, приход 14.11.\n02. удлинитель 5 м на 4 гнезда — 395 шт по 3514.09 ₽, поставщик «Северная линия», ячейка А-40, приход 10.11.\n03. кабель медный ВВГ 3×2,5 — 230 м по 1153.39 ₽, поставщик «Северная линия», ячейка А-14, приход 13.11.\n04. стабилизатор напряжения 5… (+1 556 символов)",
+          "user_tokens": 916,
+          "history_before": 4026,
+          "history_after": 5048,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 5569,
+              "prompt": 5651,
+              "completion": 57,
+              "cached": 4608,
+              "reasoning": 32,
+              "cost": 0.00020447399999999998,
+              "latency": 3.7752433999994537,
+              "finish_reason": "stop",
+              "sent_messages": 12,
+              "max_tokens": 431,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 5651,
+                "completion_tokens": 57,
+                "total_tokens": 5708,
+                "prompt_tokens_details": {
+                  "cached_tokens": 4608
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 32
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00020447,
+                  "allowance": 0.00024537,
+                  "tokens": {
+                    "input": 1043,
+                    "output": 57,
+                    "reasoning": 32,
+                    "cache_read": 4608,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "04. стабилизатор напряжения 5 кВт — 8641.74 ₽ за единицу.",
+          "factor": 1.4268,
+          "last_estimate": 5569,
+          "cost": 0.00020447399999999998,
+          "context": 5708
+        },
+        {
+          "n": 7,
+          "user": "Отчёт склада №6 за 9 ноября 2026 г. Ответственный: смена А.\n01. датчик движения — 291 шт по 4989.23 ₽, поставщик «Вольт-Трейд», ячейка В-40, приход 11.11.\n02. клеммник WAGO на 3 провода — 48 уп по 7600.88 ₽, поставщик «Вольт-Трейд», ячейка А-24, приход 13.11.\n03. автоматический выключатель 16 А — 212 шт по 7245.96 ₽, поставщик «Ампер и сыновья», ячейка В-7, приход 13.11.\n04. кабель медный ВВГ 3×2,… (+1 532 символов)",
+          "user_tokens": 916,
+          "history_before": 5048,
+          "history_after": 5048,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 0,
+          "status": "overflow",
+          "error": "запрос ≈6 563 токенов не помещается в окно 6 000 (эмуляция). Настоящий API в этом случае отвечает HTTP 400 — см. сценарий real в --demo.",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 6563,
+          "cost": 0,
+          "context": 0
+        },
+        {
+          "n": 8,
+          "user": "Отчёт склада №7 за 10 ноября 2026 г. Ответственный: смена В.\n01. светильник LED 36 Вт — 285 шт по 3829.30 ₽, поставщик «СветоПро», ячейка А-15, приход 11.11.\n02. лампа E27 12 Вт — 324 шт по 5253.23 ₽, поставщик «Северная линия», ячейка В-38, приход 7.11.\n03. автоматический выключатель 16 А — 28 шт по 8786.65 ₽, поставщик «Северная линия», ячейка В-9, приход 5.11.\n04. датчик движения — 217 шт по 13… (+1 535 символов)",
+          "user_tokens": 913,
+          "history_before": 5048,
+          "history_after": 5048,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 0,
+          "status": "overflow",
+          "error": "запрос ≈6 561 токенов не помещается в окно 6 000 (эмуляция). Настоящий API в этом случае отвечает HTTP 400 — см. сценарий real в --demo.",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 6561,
+          "cost": 0,
+          "context": 0
+        },
+        {
+          "n": 9,
+          "user": "Отчёт склада №8 за 11 ноября 2026 г. Ответственный: смена Б.\n01. дифавтомат 25 А — 256 шт по 5164.53 ₽, поставщик «Ампер и сыновья», ячейка А-32, приход 4.11.\n02. лампа E27 12 Вт — 391 шт по 194.62 ₽, поставщик «Вольт-Трейд», ячейка В-27, приход 8.11.\n03. светильник LED 36 Вт — 197 шт по 6538.13 ₽, поставщик «Вольт-Трейд», ячейка А-5, приход 7.11.\n04. гофротруба 20 мм — 320 м по 7468.35 ₽, поставщ… (+1 541 символов)",
+          "user_tokens": 917,
+          "history_before": 5048,
+          "history_after": 5048,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 0,
+          "status": "overflow",
+          "error": "запрос ≈6 565 токенов не помещается в окно 6 000 (эмуляция). Настоящий API в этом случае отвечает HTTP 400 — см. сценарий real в --demo.",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 6565,
+          "cost": 0,
+          "context": 0
+        },
+        {
+          "n": 10,
+          "user": "Отчёт склада №9 за 12 ноября 2026 г. Ответственный: смена Г.\n01. дифавтомат 25 А — 363 шт по 8516.75 ₽, поставщик «Ампер и сыновья», ячейка А-11, приход 4.11.\n02. клеммник WAGO на 3 провода — 29 уп по 1011.86 ₽, поставщик «СветоПро», ячейка В-5, приход 13.11.\n03. светильник LED 36 Вт — 355 шт по 3462.23 ₽, поставщик «Северная линия», ячейка Б-14, приход 11.11.\n04. розетка двойная — 117 шт по 6535.… (+1 546 символов)",
+          "user_tokens": 915,
+          "history_before": 5048,
+          "history_after": 5048,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 0,
+          "status": "overflow",
+          "error": "запрос ≈6 563 токенов не помещается в окно 6 000 (эмуляция). Настоящий API в этом случае отвечает HTTP 400 — см. сценарий real в --demo.",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 6563,
+          "cost": 0,
+          "context": 0
+        },
+        {
+          "n": 11,
+          "user": "Отчёт склада №10 за 13 ноября 2026 г. Ответственный: смена А.\n01. стабилизатор напряжения 5 кВт — 311 шт по 3205.41 ₽, поставщик «Ампер и сыновья», ячейка Б-17, приход 8.11.\n02. датчик движения — 92 шт по 6177.47 ₽, поставщик «Вольт-Трейд», ячейка А-30, приход 13.11.\n03. кабель медный ВВГ 3×2,5 — 125 м по 8724.95 ₽, поставщик «СветоПро», ячейка Б-3, приход 10.11.\n04. гофротруба 20 мм — 5 м по 2132… (+1 544 символов)",
+          "user_tokens": 919,
+          "history_before": 5048,
+          "history_after": 5048,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 0,
+          "status": "overflow",
+          "error": "запрос ≈6 567 токенов не помещается в окно 6 000 (эмуляция). Настоящий API в этом случае отвечает HTTP 400 — см. сценарий real в --demo.",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 6567,
+          "cost": 0,
+          "context": 0
+        },
+        {
+          "n": 12,
+          "user": "Перечисли все позиции из последнего отчёта склада в нашем диалоге с ценой за единицу — по одной на строку, без комментариев.",
+          "user_tokens": 51,
+          "history_before": 5048,
+          "history_after": 5372,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 5699,
+              "prompt": 5748,
+              "completion": 301,
+              "cached": 5632,
+              "reasoning": 14,
+              "cost": 0.00021489599999999998,
+              "latency": 6.379410499999722,
+              "finish_reason": "length",
+              "sent_messages": 14,
+              "max_tokens": 301,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 5748,
+                "completion_tokens": 301,
+                "total_tokens": 6049,
+                "prompt_tokens_details": {
+                  "cached_tokens": 5632
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 14
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.0002149,
+                  "allowance": 0.00025788,
+                  "tokens": {
+                    "input": 116,
+                    "output": 301,
+                    "reasoning": 14,
+                    "cache_read": 5632,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "cut",
+          "error": "",
+          "answer": "01. дифавтомат 25 А — 6584.69 ₽\n02. удлинитель 5 м на 4 гнезда — 3514.09 ₽\n03. кабель медный ВВГ 3×2,5 — 1153.39 ₽\n04. стабилизатор напряжения 5 кВт — 8641.74 ₽\n05. УЗО 40 А 30 мА — 4859.92 ₽\n06. лампа E27 12 Вт — 208.81 ₽\n07. гофротруба 20 мм — 2996.71 ₽\n08. выключатель одноклавишный — 6373.47 ₽\n09. датчик движения — 4334.50 ₽\n10. розетка двойная — 1597.44 ₽\n11. автоматический выключатель 16 А — 177.34 ₽\n12. клеммник WAGO на 3 провода — 4083.61 ₽\n13. счётчик электроэнергии — 2226.09 ₽\n14. изолента ПВХ 19 мм — 2269.28 ₽\n15. щит распределительный",
+          "factor": 1.433,
+          "last_estimate": 5699,
+          "cost": 0.00021489599999999998,
+          "context": 6049
+        },
+        {
+          "n": 13,
+          "user": "Напомни, какой у меня номер заказа и кодовое слово? Ответь по истории диалога, инструменты не вызывай.",
+          "user_tokens": 44,
+          "history_before": 5372,
+          "history_after": 5372,
+          "window": 6000,
+          "emulated": true,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 0,
+          "status": "overflow",
+          "error": "запрос ≈6 033 токенов не помещается в окно 6 000 (эмуляция). Настоящий API в этом случае отвечает HTTP 400 — см. сценарий real в --demo.",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 6033,
+          "cost": 0,
+          "context": 0
+        }
+      ],
+      "history_file": "day8_overflow_none_20261115_235722.json"
+    },
+    {
+      "scenario": {
+        "id": "overflow_truncate",
+        "title": "переполнение окна, скользящее окно",
+        "about": "тот же диалог в окне 6 000 (эмуляция), старые ходы не отправляются",
+        "window": 6000,
+        "policy": "truncate"
+      },
+      "ok": true,
+      "note": "переполнений нет, до 14 старых сообщений не отправлялись, факт из хода 1 забыт (ожидаемо)",
+      "window": 6000,
+      "totals": {
+        "turns": 13,
+        "prompt": 46525,
+        "completion": 903,
+        "cached": 18176,
+        "cost": 0.0048486779999999995
+      },
+      "estimator_factor": 1.4542,
+      "turns": [
+        {
+          "n": 1,
+          "user": "Запомни, это понадобится в конце: номер моего заказа — 7341-ZX, кодовое слово — «бергамот». Ответь одним словом: «Запомнил».",
+          "user_tokens": 41,
+          "history_before": 119,
+          "history_after": 213,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 603,
+              "prompt": 750,
+              "completion": 7,
+              "cached": 640,
+              "reasoning": 0,
+              "cost": 2.262e-05,
+              "latency": 2.732250799999747,
+              "finish_reason": "stop",
+              "sent_messages": 2,
+              "max_tokens": 5397,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 750,
+                "completion_tokens": 7,
+                "total_tokens": 757,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 2.262e-05,
+                  "allowance": 2.714e-05,
+                  "tokens": {
+                    "input": 110,
+                    "output": 7,
+                    "reasoning": 0,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Запомнил.",
+          "factor": 1.2443,
+          "last_estimate": 603,
+          "cost": 2.262e-05,
+          "context": 757
+        },
+        {
+          "n": 2,
+          "user": "Отчёт склада №1 за 4 ноября 2026 г. Ответственный: смена Б.\n01. розетка двойная — 139 шт по 6498.04 ₽, поставщик «ЭлектроСнаб», ячейка В-7, приход 6.11.\n02. клеммник WAGO на 3 провода — 18 уп по 215.56 ₽, поставщик «СветоПро», ячейка А-25, приход 11.11.\n03. гофротруба 20 мм — 113 м по 8721.83 ₽, поставщик «Северная линия», ячейка В-15, приход 13.11.\n04. УЗО 40 А 30 мА — 227 шт по 8453.42 ₽, постав… (+1 541 символов)",
+          "user_tokens": 799,
+          "history_before": 213,
+          "history_after": 1180,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 1563,
+              "prompt": 1688,
+              "completion": 124,
+              "cached": 1664,
+              "reasoning": 95,
+              "cost": 8.2992e-05,
+              "latency": 4.037579199999527,
+              "finish_reason": "stop",
+              "sent_messages": 4,
+              "max_tokens": 4437,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 1688,
+                "completion_tokens": 124,
+                "total_tokens": 1812,
+                "prompt_tokens_details": {
+                  "cached_tokens": 1664
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 95
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 8.299e-05,
+                  "allowance": 9.959e-05,
+                  "tokens": {
+                    "input": 24,
+                    "output": 124,
+                    "reasoning": 95,
+                    "cache_read": 1664,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 03 — гофротруба 20 мм, 8721.83 ₽ за единицу.",
+          "factor": 1.2938,
+          "last_estimate": 1563,
+          "cost": 8.2992e-05,
+          "context": 1812
+        },
+        {
+          "n": 3,
+          "user": "Отчёт склада №2 за 5 ноября 2026 г. Ответственный: смена А.\n01. розетка двойная — 281 шт по 8422.37 ₽, поставщик «СветоПро», ячейка Б-3, приход 14.11.\n02. счётчик электроэнергии — 17 шт по 3285.67 ₽, поставщик «Вольт-Трейд», ячейка Б-28, приход 9.11.\n03. дифавтомат 25 А — 87 шт по 5051.19 ₽, поставщик «ЭлектроСнаб», ячейка А-2, приход 3.11.\n04. стабилизатор напряжения 5 кВт — 169 шт по 1574.69 ₽, … (+1 539 символов)",
+          "user_tokens": 829,
+          "history_before": 1180,
+          "history_after": 2114,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 2487,
+              "prompt": 2751,
+              "completion": 92,
+              "cached": 1664,
+              "reasoning": 63,
+              "cost": 0.00022324199999999996,
+              "latency": 3.6889457999986917,
+              "finish_reason": "stop",
+              "sent_messages": 6,
+              "max_tokens": 3513,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 2751,
+                "completion_tokens": 92,
+                "total_tokens": 2843,
+                "prompt_tokens_details": {
+                  "cached_tokens": 1664
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 63
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00022324,
+                  "allowance": 0.00026789,
+                  "tokens": {
+                    "input": 1087,
+                    "output": 92,
+                    "reasoning": 63,
+                    "cache_read": 1664,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 12 — кабель-канал 40×25, 8616.89 ₽ за единицу.",
+          "factor": 1.3625,
+          "last_estimate": 2487,
+          "cost": 0.00022324199999999996,
+          "context": 2843
+        },
+        {
+          "n": 4,
+          "user": "Отчёт склада №3 за 6 ноября 2026 г. Ответственный: смена Б.\n01. счётчик электроэнергии — 206 шт по 5757.03 ₽, поставщик «ЭлектроСнаб», ячейка А-10, приход 14.11.\n02. светильник LED 36 Вт — 270 шт по 3518.58 ₽, поставщик «Северная линия», ячейка В-5, приход 3.11.\n03. дифавтомат 25 А — 391 шт по 8618.11 ₽, поставщик «Северная линия», ячейка Б-2, приход 14.11.\n04. изолента ПВХ 19 мм — 140 шт по 4262.… (+1 570 символов)",
+          "user_tokens": 884,
+          "history_before": 2114,
+          "history_after": 3117,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 3539,
+              "prompt": 3777,
+              "completion": 75,
+              "cached": 2688,
+              "reasoning": 47,
+              "cost": 0.00021641399999999998,
+              "latency": 4.913452000000689,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 2461,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 3777,
+                "completion_tokens": 75,
+                "total_tokens": 3852,
+                "prompt_tokens_details": {
+                  "cached_tokens": 2688
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 47
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00021641,
+                  "allowance": 0.0002597,
+                  "tokens": {
+                    "input": 1089,
+                    "output": 75,
+                    "reasoning": 47,
+                    "cache_read": 2688,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 03 — дифавтомат 25 А, 8618.11 ₽ за единицу.",
+          "factor": 1.4084,
+          "last_estimate": 3539,
+          "cost": 0.00021641399999999998,
+          "context": 3852
+        },
+        {
+          "n": 5,
+          "user": "Отчёт склада №4 за 7 ноября 2026 г. Ответственный: смена Б.\n01. кабель-канал 40×25 — 137 м по 1941.39 ₽, поставщик «Северная линия», ячейка В-17, приход 13.11.\n02. гофротруба 20 мм — 142 м по 1753.02 ₽, поставщик «Вольт-Трейд», ячейка Б-24, приход 2.11.\n03. лампа E27 12 Вт — 313 шт по 3046.56 ₽, поставщик «Ампер и сыновья», ячейка В-16, приход 3.11.\n04. УЗО 40 А 30 мА — 129 шт по 4270.19 ₽, постав… (+1 547 символов)",
+          "user_tokens": 910,
+          "history_before": 3117,
+          "history_after": 4149,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4602,
+              "prompt": 4789,
+              "completion": 80,
+              "cached": 3712,
+              "reasoning": 47,
+              "cost": 0.00022068599999999997,
+              "latency": 3.831245699999272,
+              "finish_reason": "stop",
+              "sent_messages": 10,
+              "max_tokens": 1398,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4789,
+                "completion_tokens": 80,
+                "total_tokens": 4869,
+                "prompt_tokens_details": {
+                  "cached_tokens": 3712
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 47
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00022069,
+                  "allowance": 0.00026482,
+                  "tokens": {
+                    "input": 1077,
+                    "output": 80,
+                    "reasoning": 47,
+                    "cache_read": 3712,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 08 — кабель медный ВВГ 3×2,5, 8977.29 ₽ за единицу.",
+          "factor": 1.4369,
+          "last_estimate": 4602,
+          "cost": 0.00022068599999999997,
+          "context": 4869
+        },
+        {
+          "n": 6,
+          "user": "Отчёт склада №5 за 8 ноября 2026 г. Ответственный: смена В.\n01. дифавтомат 25 А — 9 шт по 6584.69 ₽, поставщик «Ампер и сыновья», ячейка Б-12, приход 14.11.\n02. удлинитель 5 м на 4 гнезда — 395 шт по 3514.09 ₽, поставщик «Северная линия», ячейка А-40, приход 10.11.\n03. кабель медный ВВГ 3×2,5 — 230 м по 1153.39 ₽, поставщик «Северная линия», ячейка А-14, приход 13.11.\n04. стабилизатор напряжения 5… (+1 556 символов)",
+          "user_tokens": 929,
+          "history_before": 4149,
+          "history_after": 5155,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4631,
+              "prompt": 4696,
+              "completion": 76,
+              "cached": 640,
+              "reasoning": 47,
+              "cost": 0.0006559199999999999,
+              "latency": 4.801999499999511,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 1369,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4696,
+                "completion_tokens": 76,
+                "total_tokens": 4772,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 47
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00065592,
+                  "allowance": 0.0007871,
+                  "tokens": {
+                    "input": 4056,
+                    "output": 76,
+                    "reasoning": 47,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 4,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 04 — стабилизатор напряжения 5 кВт, 8641.74 ₽ за единицу.",
+          "factor": 1.447,
+          "last_estimate": 4631,
+          "cost": 0.0006559199999999999,
+          "context": 4772
+        },
+        {
+          "n": 7,
+          "user": "Отчёт склада №6 за 9 ноября 2026 г. Ответственный: смена А.\n01. датчик движения — 291 шт по 4989.23 ₽, поставщик «Вольт-Трейд», ячейка В-40, приход 11.11.\n02. клеммник WAGO на 3 провода — 48 уп по 7600.88 ₽, поставщик «Вольт-Трейд», ячейка А-24, приход 13.11.\n03. автоматический выключатель 16 А — 212 шт по 7245.96 ₽, поставщик «Ампер и сыновья», ячейка В-7, приход 13.11.\n04. кабель медный ВВГ 3×2,… (+1 532 символов)",
+          "user_tokens": 929,
+          "history_before": 5155,
+          "history_after": 6125,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4668,
+              "prompt": 4676,
+              "completion": 76,
+              "cached": 0,
+              "reasoning": 47,
+              "cost": 0.000747,
+              "latency": 3.139997800000856,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 1332,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4676,
+                "completion_tokens": 76,
+                "total_tokens": 4752,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 47
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.000747,
+                  "allowance": 0.0008964,
+                  "tokens": {
+                    "input": 4676,
+                    "output": 76,
+                    "reasoning": 47,
+                    "cache_read": 0,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 6,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 13 — гофротруба 20 мм, 8998.91 ₽ за единицу.",
+          "factor": 1.4483,
+          "last_estimate": 4668,
+          "cost": 0.000747,
+          "context": 4752
+        },
+        {
+          "n": 8,
+          "user": "Отчёт склада №7 за 10 ноября 2026 г. Ответственный: смена В.\n01. светильник LED 36 Вт — 285 шт по 3829.30 ₽, поставщик «СветоПро», ячейка А-15, приход 11.11.\n02. лампа E27 12 Вт — 324 шт по 5253.23 ₽, поставщик «Северная линия», ячейка В-38, приход 7.11.\n03. автоматический выключатель 16 А — 28 шт по 8786.65 ₽, поставщик «Северная линия», ячейка В-9, приход 5.11.\n04. датчик движения — 217 шт по 13… (+1 535 символов)",
+          "user_tokens": 927,
+          "history_before": 6125,
+          "history_after": 7097,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4660,
+              "prompt": 4672,
+              "completion": 76,
+              "cached": 640,
+              "reasoning": 47,
+              "cost": 0.00065232,
+              "latency": 3.0573088000001007,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 1340,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4672,
+                "completion_tokens": 76,
+                "total_tokens": 4748,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 47
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00065232,
+                  "allowance": 0.00078278,
+                  "tokens": {
+                    "input": 4032,
+                    "output": 76,
+                    "reasoning": 47,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 8,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 11 — гофротруба 20 мм, 8821.87 ₽ за единицу.",
+          "factor": 1.4501,
+          "last_estimate": 4660,
+          "cost": 0.00065232,
+          "context": 4748
+        },
+        {
+          "n": 9,
+          "user": "Отчёт склада №8 за 11 ноября 2026 г. Ответственный: смена Б.\n01. дифавтомат 25 А — 256 шт по 5164.53 ₽, поставщик «Ампер и сыновья», ячейка А-32, приход 4.11.\n02. лампа E27 12 Вт — 391 шт по 194.62 ₽, поставщик «Вольт-Трейд», ячейка В-27, приход 8.11.\n03. светильник LED 36 Вт — 197 шт по 6538.13 ₽, поставщик «Вольт-Трейд», ячейка А-5, приход 7.11.\n04. гофротруба 20 мм — 320 м по 7468.35 ₽, поставщ… (+1 541 символов)",
+          "user_tokens": 932,
+          "history_before": 7097,
+          "history_after": 8077,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4657,
+              "prompt": 4665,
+              "completion": 76,
+              "cached": 640,
+              "reasoning": 47,
+              "cost": 0.00065127,
+              "latency": 4.254545499999949,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 1343,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4665,
+                "completion_tokens": 76,
+                "total_tokens": 4741,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 47
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00065127,
+                  "allowance": 0.00078152,
+                  "tokens": {
+                    "input": 4025,
+                    "output": 76,
+                    "reasoning": 47,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 10,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 16 — стабилизатор напряжения 5 кВт, 8393.91 ₽ за единицу.",
+          "factor": 1.4514,
+          "last_estimate": 4657,
+          "cost": 0.00065127,
+          "context": 4741
+        },
+        {
+          "n": 10,
+          "user": "Отчёт склада №9 за 12 ноября 2026 г. Ответственный: смена Г.\n01. дифавтомат 25 А — 363 шт по 8516.75 ₽, поставщик «Ампер и сыновья», ячейка А-11, приход 4.11.\n02. клеммник WAGO на 3 провода — 29 уп по 1011.86 ₽, поставщик «СветоПро», ячейка В-5, приход 13.11.\n03. светильник LED 36 Вт — 355 шт по 3462.23 ₽, поставщик «Северная линия», ячейка Б-14, приход 11.11.\n04. розетка двойная — 117 шт по 6535.… (+1 546 символов)",
+          "user_tokens": 931,
+          "history_before": 8077,
+          "history_after": 9034,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4654,
+              "prompt": 4653,
+              "completion": 68,
+              "cached": 640,
+              "reasoning": 39,
+              "cost": 0.0006446699999999999,
+              "latency": 3.4078548999987106,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 1346,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4653,
+                "completion_tokens": 68,
+                "total_tokens": 4721,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 39
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00064467,
+                  "allowance": 0.0007736,
+                  "tokens": {
+                    "input": 4013,
+                    "output": 68,
+                    "reasoning": 39,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 12,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 14 — лампа E27 12 Вт, 8981.71 ₽ за единицу.",
+          "factor": 1.4513,
+          "last_estimate": 4654,
+          "cost": 0.0006446699999999999,
+          "context": 4721
+        },
+        {
+          "n": 11,
+          "user": "Отчёт склада №10 за 13 ноября 2026 г. Ответственный: смена А.\n01. стабилизатор напряжения 5 кВт — 311 шт по 3205.41 ₽, поставщик «Ампер и сыновья», ячейка Б-17, приход 8.11.\n02. датчик движения — 92 шт по 6177.47 ₽, поставщик «Вольт-Трейд», ячейка А-30, приход 13.11.\n03. кабель медный ВВГ 3×2,5 — 125 м по 8724.95 ₽, поставщик «СветоПро», ячейка Б-3, приход 10.11.\n04. гофротруба 20 мм — 5 м по 2132… (+1 544 символов)",
+          "user_tokens": 935,
+          "history_before": 9034,
+          "history_after": 10000,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4656,
+              "prompt": 4652,
+              "completion": 71,
+              "cached": 640,
+              "reasoning": 42,
+              "cost": 0.0006463199999999999,
+              "latency": 3.1964590000006865,
+              "finish_reason": "stop",
+              "sent_messages": 8,
+              "max_tokens": 1344,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4652,
+                "completion_tokens": 71,
+                "total_tokens": 4723,
+                "prompt_tokens_details": {
+                  "cached_tokens": 640
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 42
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00064632,
+                  "allowance": 0.00077558,
+                  "tokens": {
+                    "input": 4012,
+                    "output": 71,
+                    "reasoning": 42,
+                    "cache_read": 640,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 14,
+          "status": "ok",
+          "error": "",
+          "answer": "Позиция 11 — лампа E27 12 Вт, 8734.82 ₽ за единицу.",
+          "factor": 1.4507,
+          "last_estimate": 4656,
+          "cost": 0.0006463199999999999,
+          "context": 4723
+        },
+        {
+          "n": 12,
+          "user": "Перечисли все позиции из последнего отчёта склада в нашем диалоге с ценой за единицу — по одной на строку, без комментариев.",
+          "user_tokens": 52,
+          "history_before": 10000,
+          "history_after": 10000,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 14,
+          "status": "error",
+          "error": "модель не ответила за 60 с (таймаут).",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 4741,
+          "cost": 0,
+          "context": 0
+        },
+        {
+          "n": 13,
+          "user": "Напомни, какой у меня номер заказа и кодовое слово? Ответь по истории диалога, инструменты не вызывай.",
+          "user_tokens": 44,
+          "history_before": 10000,
+          "history_after": 10149,
+          "window": 6000,
+          "emulated": true,
+          "policy": "truncate",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 4733,
+              "prompt": 4756,
+              "completion": 82,
+              "cached": 4608,
+              "reasoning": 25,
+              "cost": 8.5224e-05,
+              "latency": 3.7395476999990933,
+              "finish_reason": "stop",
+              "sent_messages": 10,
+              "max_tokens": 1267,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 4756,
+                "completion_tokens": 82,
+                "total_tokens": 4838,
+                "prompt_tokens_details": {
+                  "cached_tokens": 4608
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 25
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 8.522e-05,
+                  "allowance": 0.00010227,
+                  "tokens": {
+                    "input": 148,
+                    "output": 82,
+                    "reasoning": 25,
+                    "cache_read": 4608,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 14,
+          "status": "ok",
+          "error": "",
+          "answer": "В истории нашего диалога таких данных нет — номера заказа и кодового слова вы не сообщали, и в отчётах складов их тоже не было. Подскажите их сами, если нужно, чтобы я их запомнил.",
+          "factor": 1.4542,
+          "last_estimate": 4733,
+          "cost": 8.5224e-05,
+          "context": 4838
+        }
+      ],
+      "history_file": "day8_overflow_truncate_20261115_235722.json"
+    },
+    {
+      "scenario": {
+        "id": "real",
+        "title": "запрос больше настоящего окна",
+        "about": "журнал на ~1,05 млн токенов в окно 1 000 000 deepseek-v4.1-flash",
+        "window": null,
+        "policy": "none"
+      },
+      "ok": true,
+      "note": "API отклонил запрос больше окна; следующий ход прошёл",
+      "window": 1000000,
+      "totals": {
+        "turns": 4,
+        "prompt": 64216,
+        "completion": 39,
+        "cached": 0,
+        "cost": 0.0096558
+      },
+      "estimator_factor": 1.3193,
+      "turns": [
+        {
+          "n": 1,
+          "user": "Привет! Ответь одним словом: «готов».",
+          "user_tokens": 13,
+          "history_before": 119,
+          "history_after": 176,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 575,
+              "prompt": 715,
+              "completion": 3,
+              "cached": 0,
+              "reasoning": 0,
+              "cost": 0.00010905,
+              "latency": 2.479275300000154,
+              "finish_reason": "stop",
+              "sent_messages": 2,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 715,
+                "completion_tokens": 3,
+                "total_tokens": 718,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00010905,
+                  "allowance": 0.00013086,
+                  "tokens": {
+                    "input": 715,
+                    "output": 3,
+                    "reasoning": 0,
+                    "cache_read": 0,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "готов",
+          "factor": 1.2434,
+          "last_estimate": 575,
+          "cost": 0.00010905,
+          "context": 718
+        },
+        {
+          "n": 2,
+          "user": "Вот журнал датчиков:\n0000000 2026-11-15T00:00:00 sensor-00 temp=20.0 hum=30 status=ok\n0000001 2026-11-15T00:00:01 sensor-01 temp=20.7 hum=31 status=ok\n0000002 2026-11-15T00:00:02 sensor-02 temp=21.4 hum=32 status=ok\n0000003 2026-11-15T00:00:03 sensor-03 temp=22.1 hum=33 status=ok\n0000004 2026-11-15T00:00:04 sensor-04 temp=22.8 hum=34 status=ok\n0000005 2026-11-15T00:00:05 sensor-05 temp=23.5 hum=35… (+64 653 символов)",
+          "user_tokens": 28619,
+          "history_before": 176,
+          "history_after": 29984,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 29346,
+              "prompt": 31741,
+              "completion": 5,
+              "cached": 0,
+              "reasoning": 0,
+              "cost": 0.00476415,
+              "latency": 7.526755499999126,
+              "finish_reason": "stop",
+              "sent_messages": 4,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 31741,
+                "completion_tokens": 5,
+                "total_tokens": 31746,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.00476415,
+                  "allowance": 0.00571698,
+                  "tokens": {
+                    "input": 31741,
+                    "output": 5,
+                    "reasoning": 0,
+                    "cache_read": 0,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "получил",
+          "factor": 1.2941,
+          "last_estimate": 29346,
+          "cost": 0.00476415,
+          "context": 31746
+        },
+        {
+          "n": 3,
+          "user": "Вот продолжение журнала:\n0001000 2026-11-15T00:16:40 sensor-30 temp=30.0 hum=30 status=ok\n0001001 2026-11-15T00:16:41 sensor-31 temp=30.7 hum=31 status=ok\n0001002 2026-11-15T00:16:42 sensor-32 temp=31.4 hum=32 status=ok\n0001003 2026-11-15T00:16:43 sensor-33 temp=32.1 hum=33 status=ok\n0001004 2026-11-15T00:16:44 sensor-34 temp=32.8 hum=34 status=ok\n0001005 2026-11-15T00:16:45 sensor-35 temp=33.5 hu… (+2 132 957 символов)",
+          "user_tokens": 976896,
+          "history_before": 29984,
+          "history_after": 29984,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [],
+          "dropped": 0,
+          "status": "overflow",
+          "error": "HTTP 400: запрос не помещается в контекстное окно модели (слишком длинная история или сообщение). Ответ сервера: Upstream request failed: [invalid_request_error] This model's maximum context length is 1048576 tokens; the prompt has 1049187 tokens (max_model_len) (request_id: gw-2a538a5c39f0-44d8c5)",
+          "answer": "",
+          "factor": 1.0,
+          "last_estimate": 1007453,
+          "cost": 0,
+          "context": 0
+        },
+        {
+          "n": 4,
+          "user": "Ты ещё здесь? Ответь одним словом.",
+          "user_tokens": 13,
+          "history_before": 29984,
+          "history_after": 30627,
+          "window": 1000000,
+          "emulated": false,
+          "policy": "none",
+          "tier": "off-peak",
+          "calls": [
+            {
+              "step": 1,
+              "estimate": 30570,
+              "prompt": 31760,
+              "completion": 31,
+              "cached": 0,
+              "reasoning": 27,
+              "cost": 0.0047826000000000006,
+              "latency": 3.53389099999913,
+              "finish_reason": "stop",
+              "sent_messages": 6,
+              "max_tokens": null,
+              "tool_calls": 0,
+              "usage_raw": {
+                "prompt_tokens": 31760,
+                "completion_tokens": 31,
+                "total_tokens": 31791,
+                "prompt_tokens_details": {
+                  "cached_tokens": 0
+                },
+                "completion_tokens_details": {
+                  "reasoning_tokens": 27
+                },
+                "cost": 0,
+                "opencode": {
+                  "billing_source": "go-plus",
+                  "list_cost": 0.0047826,
+                  "allowance": 0.00573912,
+                  "tokens": {
+                    "input": 31760,
+                    "output": 31,
+                    "reasoning": 27,
+                    "cache_read": 0,
+                    "cache_write_5m": 0,
+                    "cache_write_1h": 0
+                  }
+                }
+              }
+            }
+          ],
+          "dropped": 0,
+          "status": "ok",
+          "error": "",
+          "answer": "здесь",
+          "factor": 1.3193,
+          "last_estimate": 30570,
+          "cost": 0.0047826000000000006,
+          "context": 31791
+        }
+      ],
+      "history_file": "day8_real_20261115_235722.json"
+    }
+  ]
+}

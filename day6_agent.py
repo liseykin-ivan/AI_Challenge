@@ -188,7 +188,7 @@ class Agent:
         schemas = [t.schema() for t in self.tools.values()]
 
         for step in range(1, self.max_steps + 1):
-            result = self.client.chat(self.history, tools=schemas)
+            result = self._call_model(schemas)
             reply.llm_calls += 1
             reply.prompt_tokens += result.usage.get("prompt_tokens") or 0
             reply.completion_tokens += result.usage.get("completion_tokens") or 0
@@ -210,6 +210,11 @@ class Agent:
 
         reply.text = f"(агент остановлен: модель запрашивала инструменты {self.max_steps} раз подряд без финального ответа)"
         return reply
+
+    def _call_model(self, schemas: list[dict]):
+        """Один запрос к модели с текущей историей. Точка расширения: наследники (День 8) здесь считают
+        токены, следят за контекстным окном и решают, что именно отправить."""
+        return self.client.chat(self.history, tools=schemas)
 
     @staticmethod
     def _assistant_message(result) -> dict:

@@ -9,7 +9,18 @@ USER_AGENT = "ai-challenge-cli/0.1"
 
 
 class LLMError(Exception):
-    """Ошибка обращения к модели; текст сразу понятен пользователю."""
+    """Ошибка обращения к модели; текст сразу понятен пользователю.
+    status — HTTP-код ответа (None, если до сервера не достучались), detail — текст ошибки от сервера."""
+
+    def __init__(self, message: str, status: int | None = None, detail: str = ""):
+        super().__init__(message)
+        self.status = status
+        self.detail = detail
+
+
+# По этим словам в тексте ошибки сервера узнаём, что запрос не поместился в контекстное окно модели.
+CONTEXT_OVERFLOW_HINTS = ("context length", "context_length", "context window", "maximum context",
+                          "too many tokens", "too long", "token limit", "exceeds")
 
 
 @dataclass
@@ -22,6 +33,7 @@ class ChatResult:
     reasoning: str = ""  # скрытое рассуждение reasoning-моделей (reasoning_content), если провайдер его отдаёт
     tool_calls: list[dict] = field(default_factory=list)  # запросы модели на вызов инструментов (если передавали tools)
     message: dict = field(default_factory=dict)  # сообщение ассистента как пришло от сервера — для истории диалога агента
+    extra: dict = field(default_factory=dict)  # прочие поля ответа и заголовки провайдера (id, opencode-*, x-ratelimit-*)
 
 
 class LLMClient:
@@ -55,7 +67,8 @@ class LLMClient:
         latency = time.perf_counter() - start
 
         if not response.is_success:
-            raise LLMError(self._http_error(response))
+            raise LLMError(self._http_error(response), status=response.status_code,
+                           detail=_server_detail(response))
 
         try:
             data = response.json()
@@ -76,11 +89,17 @@ class LLMClient:
             reasoning=reasoning if isinstance(reasoning, str) else str(reasoning),
             tool_calls=tool_calls,
             message=message,
+            extra=_extra(data, response.headers),
         )
 
     def _http_error(self, response: httpx.Response) -> str:
         code = response.status_code
-        if code in (401, 403):
+        detail = _server_detail(response)
+        if code in (400, 413, 422) and is_context_overflow(detail):
+            message = "запрос не помещается в контекстное окно модели (слишком длинная история или сообщение)."
+        elif code == 413:
+            message = "запрос слишком большой: сервер не принял тело запроса."
+        elif code in (401, 403):
             message = "ключ не принят. Проверьте OPENCODE_API_KEY в .env."
         elif code == 400:
             message = f"запрос отклонён. Часто причина — модель «{self.model}» недоступна для вашего аккаунта."
@@ -92,7 +111,21 @@ class LLMClient:
             message = "сбой на стороне сервера. Попробуйте позже."
         else:
             message = "сервер отклонил запрос."
-        return f"HTTP {code}: {message} Ответ сервера: {_server_detail(response)}"
+        return f"HTTP {code}: {message} Ответ сервера: {detail}"
+
+
+def is_context_overflow(text: str) -> bool:
+    text = (text or "").lower()
+    return any(hint in text for hint in CONTEXT_OVERFLOW_HINTS)
+
+
+def _extra(data: dict, headers: httpx.Headers) -> dict:
+    """Всё из ответа, кроме choices и usage, плюс заголовки провайдера про лимиты и учёт запроса."""
+    extra = {k: v for k, v in data.items() if k not in ("choices", "usage")}
+    marked = {k: v for k, v in headers.items() if "opencode" in k.lower() or "ratelimit" in k.lower()}
+    if marked:
+        extra["headers"] = marked
+    return extra
 
 
 def _server_detail(response: httpx.Response) -> str:
