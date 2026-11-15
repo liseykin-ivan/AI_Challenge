@@ -9,6 +9,7 @@ ENV_FILE = Path(__file__).with_name(".env")
 DEFAULT_BASE_URL = "https://opencode.ai/inference/go/openai/v1"
 DEFAULT_MODEL = "deepseek-v4.1-flash"
 DEFAULT_TIMEOUT = 60.0
+DEFAULT_RETRIES = 2
 
 
 class ConfigError(Exception):
@@ -21,6 +22,7 @@ class Settings:
     base_url: str
     model: str
     timeout: float
+    retries: int = DEFAULT_RETRIES  # повторов при таймауте, обрыве связи, 429 и 5xx
 
 
 def load_settings() -> Settings:
@@ -36,10 +38,17 @@ def load_settings() -> Settings:
         timeout = float(os.getenv("LLM_TIMEOUT") or DEFAULT_TIMEOUT)
     except ValueError:
         raise ConfigError("LLM_TIMEOUT в .env должен быть числом (секунды).")
+    try:
+        retries = int(os.getenv("LLM_RETRIES") or DEFAULT_RETRIES)
+        if retries < 0:
+            raise ValueError
+    except ValueError:
+        raise ConfigError("LLM_RETRIES в .env должен быть целым числом ≥ 0 (сколько раз повторять запрос).")
 
     return Settings(
         api_key=api_key,
         base_url=os.getenv("LLM_BASE_URL") or DEFAULT_BASE_URL,
         model=os.getenv("LLM_MODEL") or DEFAULT_MODEL,
         timeout=timeout,
+        retries=retries,
     )

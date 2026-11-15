@@ -362,13 +362,18 @@ class TokenAgent(PersistentAgent):
         self.save()
         return reply
 
+    def _select(self, schemas: list[dict]) -> tuple[list[dict], int]:
+        """Что отправить в модель: (сообщения, сколько сообщений истории в запрос не попало).
+        Точка расширения: День 9 подставляет сюда summary вместо старой части истории."""
+        return self._fit(schemas) if self.policy == "truncate" else (self.history, 0)
+
     def _call_model(self, schemas: list[dict]):
         est = self.estimator
-        messages, dropped = self._fit(schemas) if self.policy == "truncate" else (self.history, 0)
+        messages, dropped = self._select(schemas)
         raw = est.raw_messages(messages, schemas)
         estimate = est.apply(raw)
         self._turn.dropped = max(self._turn.dropped, dropped)
-        if dropped:
+        if dropped and self.policy == "truncate":
             self.on_event("truncate", {"dropped": dropped, "sent": len(messages), "total": len(self.history),
                                        "estimate": estimate, "window": self.window})
 
