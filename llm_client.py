@@ -1,7 +1,7 @@
 """Клиент OpenAI-совместимого Chat Completions API на голом httpx."""
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import httpx
 
@@ -20,6 +20,8 @@ class ChatResult:
     latency: float  # секунды
     finish_reason: str | None = None  # "stop" | "length" | ... — почему модель остановилась
     reasoning: str = ""  # скрытое рассуждение reasoning-моделей (reasoning_content), если провайдер его отдаёт
+    tool_calls: list[dict] = field(default_factory=list)  # запросы модели на вызов инструментов (если передавали tools)
+    message: dict = field(default_factory=dict)  # сообщение ассистента как пришло от сервера — для истории диалога агента
 
 
 class LLMClient:
@@ -33,7 +35,7 @@ class LLMClient:
         self.session_id = session_id or uuid.uuid4().hex
 
     def chat(self, messages: list[dict], **params) -> ChatResult:
-        """params — дополнительные поля запроса: max_tokens, stop, response_format, temperature..."""
+        """params — дополнительные поля запроса: max_tokens, stop, response_format, temperature, tools..."""
         url = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -59,7 +61,8 @@ class LLMClient:
             data = response.json()
             choice = data["choices"][0]
             message = choice["message"]
-            text = message["content"]
+            text = message.get("content")
+            tool_calls = message.get("tool_calls") or []
             reasoning = message.get("reasoning_content") or message.get("reasoning") or ""
         except (ValueError, KeyError, IndexError, TypeError):
             raise LLMError(f"неожиданный ответ сервера: {response.text[:200]!r}")
@@ -71,6 +74,8 @@ class LLMClient:
             latency=latency,
             finish_reason=choice.get("finish_reason"),
             reasoning=reasoning if isinstance(reasoning, str) else str(reasoning),
+            tool_calls=tool_calls,
+            message=message,
         )
 
     def _http_error(self, response: httpx.Response) -> str:

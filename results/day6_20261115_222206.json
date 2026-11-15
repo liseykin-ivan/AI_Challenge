@@ -1,0 +1,211 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "scenarios": [
+    {
+      "scenario": {
+        "id": "no_tools",
+        "title": "без инструментов",
+        "prompt": "Объясни в двух предложениях, чем LLM-агент отличается от одного вызова модели.",
+        "expected_tools": [],
+        "min_tool_steps": 0
+      },
+      "ok": true,
+      "note": "инструменты не вызывались",
+      "reply": {
+        "text": "Один вызов модели — это однократный запрос: модель получает промпт и возвращает ответ, без доступа к внешним данным и без возможности что-то изменить. LLM-агент — это цикл: модель сама решает, какие действия (инструменты, поиск, вычисления) выполнить, получает результаты, корректирует план и повторяет шаги, пока не достигнет цели.",
+        "tool_calls": [],
+        "llm_calls": 1,
+        "prompt_tokens": 726,
+        "completion_tokens": 105,
+        "latency": 3.6062074000001303
+      },
+      "history": [
+        {
+          "role": "system",
+          "content": "Ты — полезный ассистент-агент. Отвечай кратко, на языке пользователя.\nУ тебя есть инструменты. Вызывай их, когда без них ответ будет неточным:\n- текущее время и дату узнавай только через get_current_time;\n- любые вычисления делай через calculator, не считай в уме;\n- валюты переводи только через convert_currency.\nЕсли вопрос не требует инструментов — отвечай сразу, без вызовов."
+        },
+        {
+          "role": "user",
+          "content": "Объясни в двух предложениях, чем LLM-агент отличается от одного вызова модели."
+        },
+        {
+          "role": "assistant",
+          "content": "Один вызов модели — это однократный запрос: модель получает промпт и возвращает ответ, без доступа к внешним данным и без возможности что-то изменить. LLM-агент — это цикл: модель сама решает, какие действия (инструменты, поиск, вычисления) выполнить, получает результаты, корректирует план и повторяет шаги, пока не достигнет цели.",
+          "reasoning_content": "Simple conceptual question, no tools needed."
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "id": "one_tool",
+        "title": "один инструмент",
+        "prompt": "Который час сейчас в Токио?",
+        "expected_tools": [
+          "get_current_time"
+        ],
+        "min_tool_steps": 1
+      },
+      "ok": true,
+      "note": "вызваны get_current_time за 1 шаг(а)",
+      "reply": {
+        "text": "Сейчас в Токио **04:21** (ночь с воскресенья на понедельник, 16 ноября 2026 г., UTC+9).",
+        "tool_calls": [
+          {
+            "step": 1,
+            "name": "get_current_time",
+            "arguments": {
+              "timezone": "Asia/Tokyo"
+            },
+            "result": {
+              "timezone": "Asia/Tokyo",
+              "datetime": "2026-11-16 04:21:56",
+              "weekday": "Monday",
+              "utc_offset": "+0900"
+            }
+          }
+        ],
+        "llm_calls": 2,
+        "prompt_tokens": 1524,
+        "completion_tokens": 84,
+        "latency": 4.24944030000006
+      },
+      "history": [
+        {
+          "role": "system",
+          "content": "Ты — полезный ассистент-агент. Отвечай кратко, на языке пользователя.\nУ тебя есть инструменты. Вызывай их, когда без них ответ будет неточным:\n- текущее время и дату узнавай только через get_current_time;\n- любые вычисления делай через calculator, не считай в уме;\n- валюты переводи только через convert_currency.\nЕсли вопрос не требует инструментов — отвечай сразу, без вызовов."
+        },
+        {
+          "role": "user",
+          "content": "Который час сейчас в Токио?"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_7c80a0984ef44ee7b7c0ba8f",
+              "type": "function",
+              "function": {
+                "name": "get_current_time",
+                "arguments": "{\"timezone\":\"Asia/Tokyo\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_7c80a0984ef44ee7b7c0ba8f",
+          "content": "{\"timezone\": \"Asia/Tokyo\", \"datetime\": \"2026-11-16 04:21:56\", \"weekday\": \"Monday\", \"utc_offset\": \"+0900\"}"
+        },
+        {
+          "role": "assistant",
+          "content": "Сейчас в Токио **04:21** (ночь с воскресенья на понедельник, 16 ноября 2026 г., UTC+9)."
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "id": "two_tools",
+        "title": "два инструмента подряд",
+        "prompt": "Сколько рублей я заплачу за покупку на 150 долларов, если банк сверху берёт комиссию 3,5%?",
+        "expected_tools": [
+          "convert_currency",
+          "calculator"
+        ],
+        "min_tool_steps": 2
+      },
+      "ok": true,
+      "note": "вызваны convert_currency → calculator за 2 шаг(а)",
+      "reply": {
+        "text": "**≈ 12 652,88 ₽**\n\n- 150 USD по курсу 81,5 ₽ = 12 225 ₽\n- комиссия 3,5% = 427,88 ₽\n- итого: 12 652,88 ₽",
+        "tool_calls": [
+          {
+            "step": 1,
+            "name": "convert_currency",
+            "arguments": {
+              "amount": 150,
+              "from_currency": "USD",
+              "to_currency": "RUB"
+            },
+            "result": {
+              "amount": 150,
+              "from": "USD",
+              "to": "RUB",
+              "rate": 81.5,
+              "result": 12225.0
+            }
+          },
+          {
+            "step": 2,
+            "name": "calculator",
+            "arguments": {
+              "expression": "12225 * 1.035"
+            },
+            "result": {
+              "expression": "12225 * 1.035",
+              "result": 12652.875
+            }
+          }
+        ],
+        "llm_calls": 3,
+        "prompt_tokens": 2614,
+        "completion_tokens": 231,
+        "latency": 7.4661249000009775
+      },
+      "history": [
+        {
+          "role": "system",
+          "content": "Ты — полезный ассистент-агент. Отвечай кратко, на языке пользователя.\nУ тебя есть инструменты. Вызывай их, когда без них ответ будет неточным:\n- текущее время и дату узнавай только через get_current_time;\n- любые вычисления делай через calculator, не считай в уме;\n- валюты переводи только через convert_currency.\nЕсли вопрос не требует инструментов — отвечай сразу, без вызовов."
+        },
+        {
+          "role": "user",
+          "content": "Сколько рублей я заплачу за покупку на 150 долларов, если банк сверху берёт комиссию 3,5%?"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_2b45ade11a924abeaa2303cf",
+              "type": "function",
+              "function": {
+                "name": "convert_currency",
+                "arguments": "{\"amount\":150,\"from_currency\":\"USD\",\"to_currency\":\"RUB\"}"
+              }
+            }
+          ],
+          "reasoning_content": "Need current rate: convert 150 USD to RUB, then add 3.5%. Let me call convert_currency first, then calculator."
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_2b45ade11a924abeaa2303cf",
+          "content": "{\"amount\": 150, \"from\": \"USD\", \"to\": \"RUB\", \"rate\": 81.5, \"result\": 12225.0}"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_31e771818eb743188ef6d8ee",
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "arguments": "{\"expression\":\"12225 * 1.035\"}"
+              }
+            }
+          ],
+          "reasoning_content": "Now compute with 3.5%: 12225 * 1.035."
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_31e771818eb743188ef6d8ee",
+          "content": "{\"expression\": \"12225 * 1.035\", \"result\": 12652.875}"
+        },
+        {
+          "role": "assistant",
+          "content": "**≈ 12 652,88 ₽**\n\n- 150 USD по курсу 81,5 ₽ = 12 225 ₽\n- комиссия 3,5% = 427,88 ₽\n- итого: 12 652,88 ₽"
+        }
+      ]
+    }
+  ]
+}

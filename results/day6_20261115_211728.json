@@ -1,0 +1,209 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "scenarios": [
+    {
+      "scenario": {
+        "id": "no_tools",
+        "title": "без инструментов",
+        "prompt": "Объясни в двух предложениях, чем LLM-агент отличается от одного вызова модели.",
+        "expected_tools": [],
+        "min_tool_steps": 0
+      },
+      "ok": true,
+      "note": "инструменты не вызывались",
+      "reply": {
+        "text": "LLM-агент — это система, которая в цикле сама решает, какие действия и инструменты применить, получает результаты и продолжает работу до достижения цели. Один вызов модели — это разовое получение ответа на промпт без итераций, памяти о шагах и самостоятельного использования инструментов.",
+        "tool_calls": [],
+        "llm_calls": 1,
+        "prompt_tokens": 726,
+        "completion_tokens": 75,
+        "latency": 4.674856699999964
+      },
+      "history": [
+        {
+          "role": "system",
+          "content": "Ты — полезный ассистент-агент. Отвечай кратко, на языке пользователя.\nУ тебя есть инструменты. Вызывай их, когда без них ответ будет неточным:\n- текущее время и дату узнавай только через get_current_time;\n- любые вычисления делай через calculator, не считай в уме;\n- валюты переводи только через convert_currency.\nЕсли вопрос не требует инструментов — отвечай сразу, без вызовов."
+        },
+        {
+          "role": "user",
+          "content": "Объясни в двух предложениях, чем LLM-агент отличается от одного вызова модели."
+        },
+        {
+          "role": "assistant",
+          "content": "LLM-агент — это система, которая в цикле сама решает, какие действия и инструменты применить, получает результаты и продолжает работу до достижения цели. Один вызов модели — это разовое получение ответа на промпт без итераций, памяти о шагах и самостоятельного использования инструментов."
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "id": "one_tool",
+        "title": "один инструмент",
+        "prompt": "Который час сейчас в Токио?",
+        "expected_tools": [
+          "get_current_time"
+        ],
+        "min_tool_steps": 1
+      },
+      "ok": true,
+      "note": "вызваны get_current_time за 1 шаг(а)",
+      "reply": {
+        "text": "Сейчас в Токио 03:17 (ночь) понедельника, 16 ноября 2026 года (UTC+9).",
+        "tool_calls": [
+          {
+            "step": 1,
+            "name": "get_current_time",
+            "arguments": {
+              "timezone": "Asia/Tokyo"
+            },
+            "result": {
+              "timezone": "Asia/Tokyo",
+              "datetime": "2026-11-16 03:17:13",
+              "weekday": "Monday",
+              "utc_offset": "+0900"
+            }
+          }
+        ],
+        "llm_calls": 2,
+        "prompt_tokens": 1524,
+        "completion_tokens": 77,
+        "latency": 8.550665500000378
+      },
+      "history": [
+        {
+          "role": "system",
+          "content": "Ты — полезный ассистент-агент. Отвечай кратко, на языке пользователя.\nУ тебя есть инструменты. Вызывай их, когда без них ответ будет неточным:\n- текущее время и дату узнавай только через get_current_time;\n- любые вычисления делай через calculator, не считай в уме;\n- валюты переводи только через convert_currency.\nЕсли вопрос не требует инструментов — отвечай сразу, без вызовов."
+        },
+        {
+          "role": "user",
+          "content": "Который час сейчас в Токио?"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_aa1a2daa0d61427dab875d1c",
+              "type": "function",
+              "function": {
+                "name": "get_current_time",
+                "arguments": "{\"timezone\":\"Asia/Tokyo\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_aa1a2daa0d61427dab875d1c",
+          "content": "{\"timezone\": \"Asia/Tokyo\", \"datetime\": \"2026-11-16 03:17:13\", \"weekday\": \"Monday\", \"utc_offset\": \"+0900\"}"
+        },
+        {
+          "role": "assistant",
+          "content": "Сейчас в Токио 03:17 (ночь) понедельника, 16 ноября 2026 года (UTC+9)."
+        }
+      ]
+    },
+    {
+      "scenario": {
+        "id": "two_tools",
+        "title": "два инструмента подряд",
+        "prompt": "Сколько рублей я заплачу за покупку на 150 долларов, если банк сверху берёт комиссию 3,5%?",
+        "expected_tools": [
+          "convert_currency",
+          "calculator"
+        ],
+        "min_tool_steps": 2
+      },
+      "ok": true,
+      "note": "вызваны convert_currency → calculator за 2 шаг(а)",
+      "reply": {
+        "text": "**≈ 12 652,88 ₽**\n\n- 150 USD по курсу 81,5 = 12 225 ₽\n- Комиссия 3,5% = 427,88 ₽\n- Итого: 12 652,88 ₽",
+        "tool_calls": [
+          {
+            "step": 1,
+            "name": "convert_currency",
+            "arguments": {
+              "amount": 150,
+              "from_currency": "USD",
+              "to_currency": "RUB"
+            },
+            "result": {
+              "amount": 150,
+              "from": "USD",
+              "to": "RUB",
+              "rate": 81.5,
+              "result": 12225.0
+            }
+          },
+          {
+            "step": 2,
+            "name": "calculator",
+            "arguments": {
+              "expression": "12225 * 1.035"
+            },
+            "result": {
+              "expression": "12225 * 1.035",
+              "result": 12652.875
+            }
+          }
+        ],
+        "llm_calls": 3,
+        "prompt_tokens": 2598,
+        "completion_tokens": 212,
+        "latency": 10.245745299999726
+      },
+      "history": [
+        {
+          "role": "system",
+          "content": "Ты — полезный ассистент-агент. Отвечай кратко, на языке пользователя.\nУ тебя есть инструменты. Вызывай их, когда без них ответ будет неточным:\n- текущее время и дату узнавай только через get_current_time;\n- любые вычисления делай через calculator, не считай в уме;\n- валюты переводи только через convert_currency.\nЕсли вопрос не требует инструментов — отвечай сразу, без вызовов."
+        },
+        {
+          "role": "user",
+          "content": "Сколько рублей я заплачу за покупку на 150 долларов, если банк сверху берёт комиссию 3,5%?"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_d92b42884d96425a8141dbc0",
+              "type": "function",
+              "function": {
+                "name": "convert_currency",
+                "arguments": "{\"amount\":150,\"from_currency\":\"USD\",\"to_currency\":\"RUB\"}"
+              }
+            }
+          ],
+          "reasoning_content": "Compute 150 USD to RUB, then multiply by 1.035. Need currency conversion first, then calculator (dependent). So do conversion first."
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_d92b42884d96425a8141dbc0",
+          "content": "{\"amount\": 150, \"from\": \"USD\", \"to\": \"RUB\", \"rate\": 81.5, \"result\": 12225.0}"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_d4859bee0ac4466ea446fa07",
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "arguments": "{\"expression\":\"12225 * 1.035\"}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_d4859bee0ac4466ea446fa07",
+          "content": "{\"expression\": \"12225 * 1.035\", \"result\": 12652.875}"
+        },
+        {
+          "role": "assistant",
+          "content": "**≈ 12 652,88 ₽**\n\n- 150 USD по курсу 81,5 = 12 225 ₽\n- Комиссия 3,5% = 427,88 ₽\n- Итого: 12 652,88 ₽"
+        }
+      ]
+    }
+  ]
+}
