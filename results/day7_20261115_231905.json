@@ -1,0 +1,227 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "history_file": "demo_20261115_231905.json",
+  "steps": [
+    {
+      "step": "запуск 1 — вопрос с инструментами",
+      "prompt": "Который час сейчас в Токио? И сколько рублей стоят 150 долларов?",
+      "ok": true,
+      "note": "вызваны get_current_time, convert_currency",
+      "messages_before": 0,
+      "messages_after": 6,
+      "tools": [
+        {
+          "name": "get_current_time",
+          "arguments": {
+            "timezone": "Asia/Tokyo"
+          },
+          "result": {
+            "timezone": "Asia/Tokyo",
+            "datetime": "2026-11-16 05:19:09",
+            "weekday": "Monday",
+            "utc_offset": "+0900"
+          }
+        },
+        {
+          "name": "convert_currency",
+          "arguments": {
+            "amount": 150,
+            "from_currency": "USD",
+            "to_currency": "RUB"
+          },
+          "result": {
+            "amount": 150,
+            "from": "USD",
+            "to": "RUB",
+            "rate": 81.5,
+            "result": 12225.0
+          }
+        }
+      ],
+      "answer": "Сейчас в Токио: **05:19, понедельник, 16 ноября 2026** (UTC+9).\n\n150 долларов = **12 225 ₽** (курс 81,5 ₽/USD).",
+      "turn": {
+        "at": "2026-11-15T23:19:13+03:00",
+        "user": "Который час сейчас в Токио? И сколько рублей стоят 150 долларов?",
+        "llm_calls": 2,
+        "tool_calls": 2,
+        "prompt_tokens": 1659,
+        "completion_tokens": 169,
+        "latency": 7.73,
+        "history_before": 1
+      }
+    },
+    {
+      "step": "запуск 2 — после перезапуска, по памяти",
+      "prompt": "Какое точное время, с секундами, вернул инструмент, когда я спрашивал про Токио? Инструменты не вызывай — ответь по истории диалога.",
+      "ok": true,
+      "note": "без вызовов, в ответе время 05:19:09 из результата запуска 1",
+      "messages_before": 6,
+      "messages_after": 8,
+      "tools": [],
+      "answer": "**05:19:09** — инструмент вернул `2026-11-16 05:19:09` (понедельник, UTC+9).",
+      "turn": {
+        "at": "2026-11-15T23:19:17+03:00",
+        "user": "Какое точное время, с секундами, вернул инструмент, когда я спрашивал про Токио? Инструменты не вызывай — ответь по истории диалога.",
+        "llm_calls": 1,
+        "tool_calls": 0,
+        "prompt_tokens": 1034,
+        "completion_tokens": 65,
+        "latency": 3.92,
+        "history_before": 6
+      }
+    },
+    {
+      "step": "запуск 3 — после перезапуска, с результатом из прошлого",
+      "prompt": "Прибавь 10% к рублёвой сумме из моего первого вопроса.",
+      "ok": true,
+      "note": "взята сумма 12225 ₽ из запуска 1, calculator → 13447.5",
+      "messages_before": 8,
+      "messages_after": 12,
+      "tools": [
+        {
+          "name": "calculator",
+          "arguments": {
+            "expression": "12225 * 1.1"
+          },
+          "result": {
+            "expression": "12225 * 1.1",
+            "result": 13447.5
+          }
+        }
+      ],
+      "answer": "12 225 ₽ + 10% = **13 447,50 ₽**",
+      "turn": {
+        "at": "2026-11-15T23:19:25+03:00",
+        "user": "Прибавь 10% к рублёвой сумме из моего первого вопроса.",
+        "llm_calls": 2,
+        "tool_calls": 1,
+        "prompt_tokens": 2350,
+        "completion_tokens": 96,
+        "latency": 7.78,
+        "history_before": 8
+      }
+    }
+  ],
+  "saved_history": {
+    "session_id": "5ab2ed515e394b28ab3ab2d612d8c915",
+    "model": "deepseek-v4.1-flash",
+    "created_at": "2026-11-15T23:19:05+03:00",
+    "updated_at": "2026-11-15T23:19:25+03:00",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Ты — полезный ассистент-агент. Отвечай кратко, на языке пользователя.\nУ тебя есть инструменты. Вызывай их, когда без них ответ будет неточным:\n- текущее время и дату узнавай только через get_current_time;\n- любые вычисления делай через calculator, не считай в уме;\n- валюты переводи только через convert_currency.\nЕсли вопрос не требует инструментов — отвечай сразу, без вызовов."
+      },
+      {
+        "role": "user",
+        "content": "Который час сейчас в Токио? И сколько рублей стоят 150 долларов?"
+      },
+      {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_cb6fb09927ab494f84f8fb08",
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "arguments": "{\"timezone\":\"Asia/Tokyo\"}"
+            }
+          },
+          {
+            "id": "call_a81a6b82ddb74ad8a8d7a4e9",
+            "type": "function",
+            "function": {
+              "name": "convert_currency",
+              "arguments": "{\"amount\":150,\"from_currency\":\"USD\",\"to_currency\":\"RUB\"}"
+            }
+          }
+        ],
+        "reasoning_content": "Two independent calls."
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_cb6fb09927ab494f84f8fb08",
+        "content": "{\"timezone\": \"Asia/Tokyo\", \"datetime\": \"2026-11-16 05:19:09\", \"weekday\": \"Monday\", \"utc_offset\": \"+0900\"}"
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_a81a6b82ddb74ad8a8d7a4e9",
+        "content": "{\"amount\": 150, \"from\": \"USD\", \"to\": \"RUB\", \"rate\": 81.5, \"result\": 12225.0}"
+      },
+      {
+        "role": "assistant",
+        "content": "Сейчас в Токио: **05:19, понедельник, 16 ноября 2026** (UTC+9).\n\n150 долларов = **12 225 ₽** (курс 81,5 ₽/USD)."
+      },
+      {
+        "role": "user",
+        "content": "Какое точное время, с секундами, вернул инструмент, когда я спрашивал про Токио? Инструменты не вызывай — ответь по истории диалога."
+      },
+      {
+        "role": "assistant",
+        "content": "**05:19:09** — инструмент вернул `2026-11-16 05:19:09` (понедельник, UTC+9).",
+        "reasoning_content": "The tool returned \"2026-11-16 05:19:09\". Seconds: 09. Answer without tools."
+      },
+      {
+        "role": "user",
+        "content": "Прибавь 10% к рублёвой сумме из моего первого вопроса."
+      },
+      {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_411fa9eed1e54b15ad31a3df",
+            "type": "function",
+            "function": {
+              "name": "calculator",
+              "arguments": "{\"expression\":\"12225 * 1.1\"}"
+            }
+          }
+        ],
+        "reasoning_content": "150 USD = 12225 RUB. Add 10%: 12225 * 1.1 = 13447.5. Use calculator."
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_411fa9eed1e54b15ad31a3df",
+        "content": "{\"expression\": \"12225 * 1.1\", \"result\": 13447.5}"
+      },
+      {
+        "role": "assistant",
+        "content": "12 225 ₽ + 10% = **13 447,50 ₽**"
+      }
+    ],
+    "turns": [
+      {
+        "at": "2026-11-15T23:19:13+03:00",
+        "user": "Который час сейчас в Токио? И сколько рублей стоят 150 долларов?",
+        "llm_calls": 2,
+        "tool_calls": 2,
+        "prompt_tokens": 1659,
+        "completion_tokens": 169,
+        "latency": 7.73,
+        "history_before": 1
+      },
+      {
+        "at": "2026-11-15T23:19:17+03:00",
+        "user": "Какое точное время, с секундами, вернул инструмент, когда я спрашивал про Токио? Инструменты не вызывай — ответь по истории диалога.",
+        "llm_calls": 1,
+        "tool_calls": 0,
+        "prompt_tokens": 1034,
+        "completion_tokens": 65,
+        "latency": 3.92,
+        "history_before": 6
+      },
+      {
+        "at": "2026-11-15T23:19:25+03:00",
+        "user": "Прибавь 10% к рублёвой сумме из моего первого вопроса.",
+        "llm_calls": 2,
+        "tool_calls": 1,
+        "prompt_tokens": 2350,
+        "completion_tokens": 96,
+        "latency": 7.78,
+        "history_before": 8
+      }
+    ]
+  }
+}
