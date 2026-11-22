@@ -363,4 +363,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    from run_timer import run_timed
+    sys.exit(run_timed(main))

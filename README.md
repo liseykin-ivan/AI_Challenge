@@ -74,6 +74,7 @@ $body = '{"model":"deepseek-v4.1-flash","messages":[{"role":"user","content":"pi
 | `main.py` | CLI: аргументы, ввод, вывод |
 | `llm_client.py` | `LLMClient.chat(messages, **params) -> ChatResult` (текст, `finish_reason`, рассуждение, `tool_calls`, usage, прочие поля ответа, число попыток), HTTP и разбор ошибок (`LLMError.status`, переполнение контекста), повтор временных сбоев |
 | `config.py` | чтение и проверка `.env` (`LLM_TIMEOUT`, `LLM_RETRIES`) |
+| `run_timer.py` | `run_timed(main)` — запуск скрипта дня с выводом времени выполнения в конце (правило — в `CLAUDE.md`) |
 | `day2_format.py` | День 2: один запрос с разным уровнем контроля формата |
 | `day3_reasoning.py` | День 3: 10 задач × 4 способа рассуждения × 2 уровня reasoning |
 | `day4_temperature.py` | День 4: 4 задачи (2 с одним ответом, 2 на генерацию) × 3 температуры × 5 прогонов |
