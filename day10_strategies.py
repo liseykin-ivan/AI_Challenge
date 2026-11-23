@@ -154,6 +154,52 @@ class SlidingWindow(Strategy):
         return agent.history[:1] + agent.history[start:], start - 1
 
 
+def _merge_json(base: dict, extra: dict) -> dict:
+    """Слияние двух объектов ответа: вложенные словари — по ключам, списки — сложением, остальное — позже побеждает."""
+    out = dict(base)
+    for key, value in extra.items():
+        old = out.get(key)
+        if isinstance(old, dict) and isinstance(value, dict):
+            out[key] = _merge_json(old, value)
+        elif isinstance(old, list) and isinstance(value, list):
+            out[key] = old + value
+        else:
+            out[key] = value
+    return out
+
+
+def extract_json_object(text: str) -> dict:
+    """Первый JSON-объект из ответа модели. Соседние объекты (ответ пришёл частями) сливаются,
+    текст после них (пояснение, второй ответ через прозу) игнорируется."""
+    raw = text or ""
+    decoder = json.JSONDecoder()
+    start = raw.find("{")
+    while start >= 0:
+        try:
+            data, end = decoder.raw_decode(raw, start)
+        except ValueError:
+            start = raw.find("{", start + 1)
+            continue
+        if not isinstance(data, dict):
+            raise ValueError("ожидался объект")
+        result = data
+        while True:
+            nxt = end
+            while nxt < len(raw) and raw[nxt].isspace():
+                nxt += 1
+            if nxt >= len(raw) or raw[nxt] != "{":
+                break
+            try:
+                extra, end = decoder.raw_decode(raw, nxt)
+            except ValueError:
+                break
+            if not isinstance(extra, dict):
+                break
+            result = _merge_json(result, extra)
+        return result
+    raise ValueError("нет JSON")
+
+
 class StickyFacts(Strategy):
     """Блок «факты» (ключ → значение) + последние N сообщений. Факты обновляются после каждого сообщения
     пользователя отдельным запросом: модель возвращает только изменения, слияние делает код — так модель
@@ -197,12 +243,7 @@ class StickyFacts(Strategy):
 
     @staticmethod
     def parse(text: str) -> tuple[dict[str, str], list[str]]:
-        match = re.search(r"\{.*\}", text or "", re.S)
-        if not match:
-            raise ValueError("нет JSON")
-        data = json.loads(match.group(0))
-        if not isinstance(data, dict):
-            raise ValueError("ожидался объект")
+        data = extract_json_object(text)
         if "set" not in data and "delete" not in data:  # модель вернула плоский словарь фактов
             data = {"set": data}
         update, delete = data.get("set") or {}, data.get("delete") or []

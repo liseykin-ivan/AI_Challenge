@@ -1,108 +1,128 @@
-"""День 13. Состояние задачи: конечный автомат (Task State Machine) поверх агента Дня 12.
+"""День 13. Состояние задачи: конечные автоматы для задания и пути развития героя поверх игры Дня 12.
 
-Агент Дня 12 (`PersonalAgent`: три слоя памяти, профиль пользователя, роутер памяти, инструменты, учёт токенов) ведёт
-задачу по этапам. Этап — не строчка в промпте, а состояние конечного автомата `TaskMachine` в файле
-memory/day13/<пользователь>/fsm/<id задачи>.json:
+Мастер игры Дня 12 (`CastAgent`: три слоя памяти героя Дня 11, карточки персонажей, летописец, кости) теперь не
+просто помнит, а ведёт процессы. Каждый слой памяти Дня 11 получает свои правила изменения, и все они проверяются
+кодом до применения:
 
-    planning ──(план утверждён пользователем)──▶ execution ──(все шаги выполнены)──▶ validation ──(всё пройдено)──▶ done
-        ▲                                          │   ▲                                 │
-        └────────────(пересмотр плана)─────────────┘   └──────(проверка не пройдена)─────┘
-    planning / execution / validation ──▶ paused ──▶ обратно на тот же этап
+    краткосрочная — задание: автомат MissionMachine, memory/day13/<мир>/heroes/<герой>/fsm/mission_<id>.json
 
-Состояние задачи — этап, текущий шаг и ожидаемое действие (кто и что должен сделать). Менять его можно только
-инструментами — save_plan, complete_step, record_check, request_transition — и командами пользователя. Каждый вызов
-код проверяет до применения: есть ли такой переход в таблице TRANSITIONS и выполнено ли его условие (guard).
-Если нет, состояние не меняется, а модель получает причину отказа и должна объяснить её пользователю.
-Сверх таблицы:
-- план утверждает только пользователь: командой /approve или словом «утверждаю» в сообщении. Инструмента
-  «утвердить» у модели нет;
-- шаги выполняются строго по порядку, за ход — один шаг или одна проверка (--per-turn);
-- на этапе planning и на паузе код в ответе отсекается: ответ отклоняется, модель переписывает его без кода;
-- после /newchat или перезапуска состояние берётся из файла: «Продолжаем» — и агент идёт с того же шага.
+        сборы ──(маршрут утверждён игроком)──▶ в пути ──(все этапы пройдены)──▶ отчёт ──(все условия выполнены)──▶ сдано
+        briefing ▲                              journey │   ▲                    report │                          done
+                 └──────(пересмотр маршрута)────────────┘   └──(условие не выполнено)───┘
+        briefing / journey / report ──▶ привал (paused) ──▶ обратно на тот же этап
+        На «сдано» код сам начисляет награду в рабочую память: ци — в автомат развития, вещи — в снаряжение.
 
-    python day13_task_state.py                         # чат (пользователь default)
-    python day13_task_state.py --user video --new      # начать заново
+    рабочая — путь развития: автомат CultivationMachine, fsm/circle_<id>.json
+
+        накопление ──(ци и формы набраны: код сам)──▶ готов к прорыву ──(игрок решил, герой не в пути)──▶ прорыв
+        gathering                                    ready                                           breakthrough
+        прорыв ──(кости: удача)──▶ ступень взята (advanced) → новый круг: прошлый — в архив, снаряжение переносится,
+                                   отметка о прорыве — в долговременную
+        прорыв ──(кости: неудача)──▶ накопление, треть ци потеряна
+        Медитировать и отрабатывать форму можно не в пути: вне задания или на привале. Одно действие за ход.
+
+    долговременная — политика записи POLICY: школа меняется только событием игры (/event), особенности
+    летописец может только добавлять, а круг, ступень, ци и формы пишет только автомат развития.
+
+Состояние каждого автомата — этап, текущий шаг и ожидаемое действие. Менять его можно только инструментами Мастера —
+save_route, complete_step, record_check, request_transition, cultivate, train_form, cultivation_transition,
+resolve_breakthrough — и командами игрока. Каждый вызов код проверяет до применения: есть ли такой переход в таблице
+и выполнено ли его условие (guard). Если нет, состояние не меняется, а Мастер получает причину отказа.
+Сверх таблиц:
+- маршрут утверждает только игрок: «маршрут утверждаю» / «выступаем» или /approve; прорыв начинает только игрок:
+  «начинаю прорыв» или /breakthrough. Таких инструментов у Мастера нет;
+- этапы пути и условия задания — строго по порядку, за ход — одно действие задания и одно действие развития;
+- на сборах и на привале рассказ о том, что задание уже выполнено, отсекается: ответ отклоняется и переписывается;
+- исход прорыва решают кости кода, а не Мастер;
+- после /newchat или перезапуска состояние берётся из файлов: «Продолжаем» — и Мастер идёт с того же шага.
+
+    python day13_task_state.py                         # игра (мир default, герой luchen)
+    python day13_task_state.py --world video --new     # начать заново: Лу Чэнь берёт задание «Пропавший караван»
     python day13_task_state.py --no-guard              # правила только в промпте, код переходы не проверяет
     python day13_task_state.py --demo                  # все проверки и отчёт в results/
-    python day13_task_state.py --demo --only matrix    # только таблица переходов, без запросов к модели
+    python day13_task_state.py --demo --only matrix    # только таблицы переходов и политика памяти, без модели
 
-Команды чата: /state, /fsm, /approve, /go <этап> [причина], /pause, /resume, /journal [N], /guard on|off, /matrix,
-/task new <название> | switch <id> | list, /profile, /memory, /context, /newchat, /tokens, /history, /exit.
+Команды: /state, /fsm, /approve, /go <этап> [причина], /pause, /resume, /breakthrough, /journal [N], /guard on|off,
+/matrix, /policy, /event <раздел> <ключ> = <значение>, /remember, /forget, /mission …, /card, /memory, /context,
+/newchat, /tokens, /history, /exit.
 """
 import argparse
 import copy
 import json
 import os
+import random
 import re
 import shutil
 import sys
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from config import ConfigError, load_settings
-from day6_agent import TOOLS, Tool
+from day6_agent import Tool
 from day7_memory import MEMORY_DIR, ROOT, StoreError, now_iso, print_history, print_restore
 from day8_tokens import clip, fmt, money, print_ledger
-from day9_compression import watch_retries
+from day9_compression import normalize, watch_retries
 from day10_strategies import read_json, write_json
-from day11_memory_layers import md_escape, op_label, print_memory, stamp_now
-from day12_personalization import (CODE_LINE, FENCE, PERSONAL_PROMPT, PRESETS, PROGRAMMING_LANGS, PersonalAgent,
-                                    block_lang, print_ops, print_profile, split_code)
+from day11_memory_layers import (CARRY_OVER, GAME_TOOLS, MISSIONS, SECTION_ALIASES, SECTION_TITLES, md_escape,
+                                 mission_command, print_memory, stamp_now)
+from day12_personalization import (HERO_CARD, HERO_ID, MASTER_PROMPT12, CastAgent, print_card,
+                                   print_context12, seed_hero)
 from day12_personalization import on_event as day12_event
+from day12_personalization import op_label as op_label12
 from llm_client import LLMClient, LLMError
 
 RESULTS_DIR = ROOT / "results"
 DAY_DIR = MEMORY_DIR / "day13"
 NAME_RE = re.compile(r"[\w-]+")
 
-# ---------------------------------------------------------------- конечный автомат: состояния и переходы
+# ---------------------------------------------------------------- автомат задания: состояния и переходы
 
-STAGES = ("planning", "execution", "validation", "done")  # этапы по порядку
+STAGES = ("briefing", "journey", "report", "done")  # этапы по порядку
 PAUSED = "paused"
 STATES = STAGES + (PAUSED,)
-STATE_TITLES = {"planning": "планирование", "execution": "выполнение", "validation": "проверка", "done": "готово",
-                "paused": "пауза"}
-STATE_ALIASES = {**{s: s for s in STATES}, "план": "planning", "планирование": "planning", "выполнение": "execution",
-                 "реализация": "execution", "проверка": "validation", "валидация": "validation", "готово": "done",
-                 "финал": "done", "пауза": "paused"}
-RESUME = "@paused_from"  # «туда, откуда поставили паузу»
+STATE_TITLES = {"briefing": "сборы", "journey": "в пути", "report": "отчёт заказчику", "done": "задание сдано",
+                "paused": "привал"}
+STATE_ALIASES = {**{s: s for s in STATES}, "сборы": "briefing", "подготовка": "briefing", "маршрут": "briefing",
+                 "путь": "journey", "в_пути": "journey", "дорога": "journey", "отчёт": "report", "отчет": "report",
+                 "проверка": "report", "сдано": "done", "готово": "done", "финал": "done", "привал": "paused",
+                 "пауза": "paused"}
+RESUME = "@paused_from"  # «туда, откуда ушли на привал»
 
 
 @dataclass(frozen=True)
 class Transition:
     src: str
-    dst: str  # RESUME — этап, на котором поставили паузу
+    dst: str  # RESUME — этап, на котором ушли на привал
     guard: str  # имя условия в GUARDS
     title: str
 
 
-# Таблица разрешённых переходов. Всё, чего здесь нет, запрещено. Условие проверяется кодом до применения.
+# Таблица разрешённых переходов задания. Всё, чего здесь нет, запрещено. Условие проверяется кодом до применения.
 TRANSITIONS = (
-    Transition("planning", "execution", "plan_approved", "к выполнению"),
-    Transition("execution", "validation", "steps_done", "к проверке"),
-    Transition("validation", "done", "checks_passed", "финал"),
-    Transition("validation", "execution", "check_failed", "доработка"),
-    Transition("execution", "planning", "has_reason", "пересмотр плана"),
-    Transition("planning", PAUSED, "none", "пауза"),
-    Transition("execution", PAUSED, "none", "пауза"),
-    Transition("validation", PAUSED, "none", "пауза"),
-    Transition(PAUSED, RESUME, "resume", "снять паузу"),
+    Transition("briefing", "journey", "route_approved", "выступить"),
+    Transition("journey", "report", "steps_done", "к заказчику с отчётом"),
+    Transition("report", "done", "checks_passed", "сдать задание"),
+    Transition("report", "journey", "check_failed", "вернуться на дорогу"),
+    Transition("journey", "briefing", "has_reason", "пересмотр маршрута"),
+    Transition("briefing", PAUSED, "none", "привал"),
+    Transition("journey", PAUSED, "none", "привал"),
+    Transition("report", PAUSED, "none", "привал"),
+    Transition(PAUSED, RESUME, "resume", "снять привал"),
 )
 GUARDS = {
-    "plan_approved": "план сохранён, и эту версию утвердил пользователь",
-    "steps_done": "все шаги плана выполнены (в доработке — исправлен хотя бы один шаг)",
-    "checks_passed": "все критерии проверены и пройдены, есть итог (final)",
-    "check_failed": "хотя бы один критерий не пройден",
-    "has_reason": "указана причина (reason); утверждение плана и результаты шагов сбрасываются",
+    "route_approved": "маршрут составлен, и эту версию утвердил игрок",
+    "steps_done": "все этапы пути пройдены (на доработке — пройден заново хотя бы один)",
+    "checks_passed": "все условия задания проверены и выполнены, есть итог (final)",
+    "check_failed": "хотя бы одно условие не выполнено",
+    "has_reason": "указана причина (reason); утверждение маршрута и пройденные этапы сбрасываются",
     "none": "без условий",
-    "resume": "только на тот этап, где поставили паузу",
+    "resume": "только на тот этап, где ушли на привал",
 }
-# Действия внутри этапа: где они разрешены.
-ACTIONS = {"save_plan": ("planning",), "complete_step": ("execution",), "record_check": ("validation",),
-           "approve": ("planning",)}
-TEXT_GUARD_STAGES = ("planning", PAUSED)  # здесь реализации (кода) в ответе быть не должно
-MAX_STEPS, MAX_CHECKS = 8, 6
-EXPECTED_ACTOR = {"assistant": "ассистент", "user": "пользователь", "none": "—"}
+ACTIONS = {"save_route": ("briefing",), "complete_step": ("journey",), "record_check": ("report",),
+           "approve": ("briefing",)}
+TEXT_GUARD_STAGES = ("briefing", PAUSED)  # здесь рассказа о выполненном задании быть не должно
+MAX_STEPS, MAX_CHECKS = 6, 5
+EXPECTED_ACTOR = {"assistant": "Мастер", "user": "игрок", "none": "—"}
 
 
 def state_arg(name: str) -> str:
@@ -116,30 +136,31 @@ def nums(items) -> str:
     return ", ".join(str(i) for i in items)
 
 
-class TaskMachine:
-    """Состояние одной задачи. Меняется только методами ниже; каждый сначала проверяет, разрешено ли действие,
+class MissionMachine:
+    """Состояние одного задания. Меняется только методами ниже; каждый сначала проверяет, разрешено ли действие,
     и пишет результат в журнал. enforce=False — режим «правила только в промпте»: нарушение записывается,
     но действие применяется."""
 
     def __init__(self, path: Path | None, data: dict):
         self.path = path
         self.data = data
-        self.per_turn = 0  # шагов/проверок за ход; 0 — без ограничения
+        self.per_turn = 0  # действий задания за ход; 0 — без ограничения
         self.turn_used = 0
 
     @staticmethod
-    def blank_data(task_id: str, title: str) -> dict:
-        return {"format": 1, "task_id": task_id, "title": title, "stage": "planning", "paused_from": None,
+    def blank_data(mission_id: str, title: str) -> dict:
+        return {"format": 1, "mission_id": mission_id, "title": title, "stage": "briefing", "paused_from": None,
                 "plan": {"version": 0, "steps": [], "checks": [], "saved_at": None},
                 "approved_version": 0, "approved_at": None, "approved_by": "",
-                "round": 1, "results": {}, "checks": {}, "final": "", "journal": [], "created_at": now_iso()}
+                "round": 1, "results": {}, "checks": {}, "final": "", "rewarded": False, "journal": [],
+                "created_at": now_iso()}
 
     @classmethod
-    def load(cls, path: Path, task_id: str, title: str) -> "TaskMachine":
-        data = read_json(path) if path.exists() else cls.blank_data(task_id, title)
+    def load(cls, path: Path, mission_id: str, title: str) -> "MissionMachine":
+        data = read_json(path) if path.exists() else cls.blank_data(mission_id, title)
         if data.get("stage") not in STATES:
             raise StoreError(f"{path}: неизвестный этап {data.get('stage')!r}")
-        base = cls.blank_data(task_id, title)
+        base = cls.blank_data(mission_id, title)
         base.update(data)
         base["title"] = title or base["title"]
         return cls(path, base)
@@ -153,6 +174,11 @@ class TaskMachine:
     @property
     def stage(self) -> str:
         return self.data["stage"]
+
+    @property
+    def active_stage(self) -> str:
+        """Этап, на котором задание по сути: на привале — тот, откуда ушли."""
+        return (self.data.get("paused_from") or "briefing") if self.stage == PAUSED else self.stage
 
     @property
     def steps(self) -> list[str]:
@@ -174,7 +200,6 @@ class TaskMachine:
         return next((i for i in range(1, len(self.steps) + 1) if str(i) not in self.data["results"]), None)
 
     def reworked(self) -> list[int]:
-        """Шаги, исправленные в текущем круге доработки."""
         r = self.data["round"]
         return sorted(int(k) for k, v in self.data["results"].items() if v.get("round") == r)
 
@@ -189,52 +214,54 @@ class TaskMachine:
         stage = stage or self.stage
         n_steps, n_checks = len(self.steps), len(self.criteria)
         info = {"stage": stage, "index": 0, "total": 0, "step": "", "actor": "assistant", "expected": ""}
-        if stage == "planning":
+        if stage == "briefing":
             info["total"] = 2
             if not self.steps:
-                info.update(index=1, step="составить план: шаги и критерии проверки",
-                            expected="составить план и сохранить его через save_plan, показать пользователю")
+                info.update(index=1, step="составить маршрут: этапы пути и условия, по которым примут задание",
+                            expected="составить маршрут и сохранить через save_route, показать игроку")
             elif not self.approved:
-                info.update(index=2, step=f"утверждение плана (версия {self.version})", actor="user",
-                            expected="утвердить план (/approve или «утверждаю») или попросить правки")
+                info.update(index=2, step=f"утверждение маршрута (версия {self.version})", actor="user",
+                            expected="утвердить маршрут («маршрут утверждаю», «выступаем», /approve) или попросить правки")
             else:
-                info.update(index=2, step=f"план версии {self.version} утверждён",
-                            expected="перейти в execution: request_transition(to=\"execution\")")
-        elif stage == "execution":
+                info.update(index=2, step=f"маршрут версии {self.version} утверждён",
+                            expected="выступить: request_transition(to=\"journey\")")
+        elif stage == "journey":
             info["total"] = n_steps
             nxt = self.next_step()
             if self.data["round"] > 1:
                 fixed = self.reworked()
-                info.update(index=n_steps, step=f"доработка (круг {self.data['round']}) по непройденным критериям",
-                            expected=("исправить нужные шаги через complete_step(step=N), затем перейти в validation"
-                                      if not fixed else f"исправлены шаги {nums(fixed)}: перейти в validation "
-                                                        "или исправить ещё"))
+                info.update(index=n_steps, step=f"возврат на дорогу (круг {self.data['round']}) по невыполненным условиям",
+                            expected=("пройти нужные этапы заново через complete_step(step=N), затем к заказчику"
+                                      if not fixed else f"пройдены заново этапы {nums(fixed)}: к заказчику "
+                                                        "или пройти ещё"))
             elif nxt:
-                info.update(index=nxt, step=f"шаг {nxt} из {n_steps} — «{self.steps[nxt - 1]}»",
-                            expected=f"выполнить шаг {nxt}, показать результат и сохранить через complete_step(step={nxt})")
+                info.update(index=nxt, step=f"этап {nxt} из {n_steps} — «{self.steps[nxt - 1]}»",
+                            expected=f"разыграть этап {nxt}, показать, что вышло, и сохранить через "
+                                     f"complete_step(step={nxt})")
             else:
-                info.update(index=n_steps, step="все шаги выполнены",
-                            expected="перейти в validation: request_transition(to=\"validation\")")
-        elif stage == "validation":
+                info.update(index=n_steps, step="все этапы пути пройдены",
+                            expected="к заказчику с отчётом: request_transition(to=\"report\")")
+        elif stage == "report":
             info["total"] = n_checks
             nxt = self.next_check()
             if nxt:
-                info.update(index=nxt, step=f"критерий {nxt} из {n_checks} — «{self.criteria[nxt - 1]}»",
-                            expected=f"проверить критерий {nxt} и записать результат через record_check(check={nxt})")
+                info.update(index=nxt, step=f"условие {nxt} из {n_checks} — «{self.criteria[nxt - 1]}»",
+                            expected=f"заказчик проверяет условие {nxt}: record_check(check={nxt})")
             elif self.failed():
-                info.update(index=n_checks, step=f"не пройдены критерии {nums(self.failed())}",
-                            expected="вернуться в execution и исправить: request_transition(to=\"execution\")")
+                info.update(index=n_checks, step=f"не выполнены условия {nums(self.failed())}",
+                            expected="вернуться на дорогу и доделать: request_transition(to=\"journey\")")
             else:
-                info.update(index=n_checks, step="все критерии пройдены",
-                            expected="перейти в done с итогом: request_transition(to=\"done\", final=…)")
+                info.update(index=n_checks, step="все условия выполнены",
+                            expected="сдать задание с итогом: request_transition(to=\"done\", final=…)")
         elif stage == PAUSED:
-            src = self.data.get("paused_from") or "planning"
+            src = self.data.get("paused_from") or "briefing"
             inner = self.step_info(src)
             info.update(index=inner["index"], total=inner["total"], actor="user",
-                        step=f"пауза на этапе {src}: {inner['step']}",
-                        expected=f"сказать «продолжаем» (/resume) — задача вернётся в {src}")
+                        step=f"привал на этапе {src}: {inner['step']}",
+                        expected=f"сказать «продолжаем» (/resume) — задание вернётся на этап {src}")
         else:  # done
-            info.update(actor="none", step="задача завершена", expected="ничего: задача закрыта, итог сохранён")
+            info.update(actor="none", step="задание сдано, награда начислена",
+                        expected="ничего: задание закрыто; дальше — новое задание или путь развития")
         return info
 
     # --- переходы
@@ -247,7 +274,6 @@ class TaskMachine:
         return None
 
     def allowed(self) -> list[tuple[str, Transition, list[str]]]:
-        """Переходы из текущего этапа: (куда, правило, невыполненные условия)."""
         out = []
         for t in TRANSITIONS:
             if t.src != self.stage:
@@ -258,45 +284,44 @@ class TaskMachine:
 
     def guard_unmet(self, guard: str, reason: str = "", final: str = "") -> list[str]:
         d = self.data
-        if guard == "plan_approved":
+        if guard == "route_approved":
             if not self.steps:
-                return ["план не составлен (save_plan)"]
-            return [] if self.approved else [f"план версии {self.version} не утверждён пользователем"]
+                return ["маршрут не составлен (save_route)"]
+            return [] if self.approved else [f"маршрут версии {self.version} не утверждён игроком"]
         if guard == "steps_done":
             missing = [i for i in range(1, len(self.steps) + 1) if str(i) not in d["results"]]
-            out = [f"не выполнены шаги {nums(missing)}"] if missing else []
+            out = [f"не пройдены этапы пути {nums(missing)}"] if missing else []
             if d["round"] > 1 and not self.reworked():
-                out.append("в доработке не исправлен ни один шаг")
+                out.append("после возврата на дорогу не пройден заново ни один этап")
             return out
         if guard == "checks_passed":
             missing = [i for i in range(1, len(self.criteria) + 1) if str(i) not in d["checks"]]
-            out = [f"не проверены критерии {nums(missing)}"] if missing else []
+            out = [f"не проверены условия {nums(missing)}"] if missing else []
             if self.failed():
-                out.append(f"не пройдены критерии {nums(self.failed())}")
+                out.append(f"не выполнены условия {nums(self.failed())}")
             if not (final or "").strip():
-                out.append("нет итога задачи (final)")
+                out.append("нет итога задания (final)")
             return out
         if guard == "check_failed":
-            return [] if self.failed() else ["нет непройденных критериев — возвращаться к выполнению незачем"]
+            return [] if self.failed() else ["все проверенные условия выполнены — возвращаться на дорогу незачем"]
         if guard == "has_reason":
-            return [] if (reason or "").strip() else ["нужна причина пересмотра плана (reason)"]
+            return [] if (reason or "").strip() else ["нужна причина пересмотра маршрута (reason)"]
         return []
 
     def check(self, dst: str, reason: str = "", final: str = "") -> tuple[Transition | None, list[str]]:
-        """Можно ли перейти в dst прямо сейчас: (правило, невыполненные условия). Пустой список — можно."""
         src = self.stage
         if dst not in STATES:
             return None, [f"нет этапа «{dst}». Есть: {', '.join(STATES)}"]
         if dst == src:
-            return None, [f"задача уже на этапе {src}"]
+            return None, [f"задание уже на этапе {src}"]
         t = self.rule(dst)
         if t is None:
             ways = [d for d, _, _ in self.allowed()]
             why = f"перехода {src} → {dst} нет в таблице"
             if src == PAUSED:
-                why += f": с паузы можно вернуться только на этап {self.data.get('paused_from')}"
+                why += f": с привала можно вернуться только на этап {self.data.get('paused_from')}"
             elif src == "done":
-                why += ": задача завершена, done — конечное состояние"
+                why += ": задание сдано, done — конечное состояние, награда уже начислена"
             elif dst in STAGES and src in STAGES and STAGES.index(dst) > STAGES.index(src) + 1:
                 skipped = STAGES[STAGES.index(src) + 1:STAGES.index(dst)]
                 why += f": нельзя перепрыгнуть {', '.join(skipped)}"
@@ -320,11 +345,11 @@ class TaskMachine:
             d["paused_from"] = src
         elif src == PAUSED:
             d["paused_from"] = None
-        if src == "execution" and dst == "planning":  # новый план — новое утверждение и новое выполнение
+        if src == "journey" and dst == "briefing":  # новый маршрут — новое утверждение и новый путь
             d.update(approved_version=0, approved_at=None, approved_by="", results={}, round=1)
-        if dst == "validation" and src != PAUSED:
+        if dst == "report" and src != PAUSED:
             d["checks"] = {}
-        if src == "validation" and dst == "execution":
+        if src == "report" and dst == "journey":
             d["round"] += 1
         if dst == "done":
             d["final"] = final
@@ -336,52 +361,52 @@ class TaskMachine:
         if self.stage in ACTIONS[action]:
             return []
         where = ", ".join(ACTIONS[action])
-        hint = {"planning": "сначала нужен утверждённый план", "paused": "задача на паузе",
-                "done": "задача завершена"}.get(self.stage, "")
+        hint = {"briefing": "сначала нужен утверждённый маршрут", "paused": "герой на привале",
+                "done": "задание сдано"}.get(self.stage, "")
         return [f"{action} — только на этапе {where}, а сейчас {self.stage}" + (f" ({hint})" if hint else "")]
 
     def _limit_unmet(self) -> list[str]:
         if self.per_turn and self.turn_used >= self.per_turn:
-            return [f"за один ход — не больше {self.per_turn} шага/проверки: покажи результат пользователю, "
-                    f"следующий — в следующем ходе"]
+            return [f"за один ход — не больше {self.per_turn} действия задания: покажи игроку, что вышло, "
+                    f"следующее — в следующем ходе"]
         return []
 
-    def save_plan(self, steps, checks, by: str, enforce: bool = True) -> dict:
+    def save_route(self, steps, checks, by: str, enforce: bool = True) -> dict:
         steps = [str(s).strip() for s in (steps or []) if str(s).strip()]
         checks = [str(c).strip() for c in (checks or []) if str(c).strip()]
-        unmet = self._stage_unmet("save_plan")
-        if self.stage == "execution":
-            unmet = [unmet[0] + "; чтобы изменить план — request_transition(to=\"planning\", reason=…)"]
+        unmet = self._stage_unmet("save_route")
+        if self.stage == "journey":
+            unmet = [unmet[0] + "; чтобы изменить маршрут — request_transition(to=\"briefing\", reason=…)"]
         broken = []
         if not 1 <= len(steps) <= MAX_STEPS:
-            broken.append(f"в плане должно быть от 1 до {MAX_STEPS} шагов, а их {len(steps)}")
+            broken.append(f"этапов пути должно быть от 1 до {MAX_STEPS}, а их {len(steps)}")
         if not 1 <= len(checks) <= MAX_CHECKS:
-            broken.append(f"критериев проверки должно быть от 1 до {MAX_CHECKS}, а их {len(checks)}")
+            broken.append(f"условий задания должно быть от 1 до {MAX_CHECKS}, а их {len(checks)}")
         applied = not broken and (not unmet or not enforce)
         if applied:
             self.data["plan"] = {"version": self.version + 1, "steps": steps, "checks": checks, "saved_at": now_iso()}
-        return self._log("action", "save_plan", by, unmet + broken, applied, enforce,
+        return self._log("action", "save_route", by, unmet + broken, applied, enforce,
                          {"steps": steps, "checks": checks})
 
     def complete_step(self, step, result: str, by: str, enforce: bool = True) -> dict:
         try:
             step = int(step)
         except (TypeError, ValueError):
-            return self._log("action", "complete_step", by, [f"номер шага должен быть числом, а не {step!r}"],
+            return self._log("action", "complete_step", by, [f"номер этапа должен быть числом, а не {step!r}"],
                              False, enforce, {"step": step})
         unmet = self._stage_unmet("complete_step")
         if not unmet and not self.approved:
-            unmet.append("план не утверждён пользователем")
+            unmet.append("маршрут не утверждён игроком")
         if not 1 <= step <= max(len(self.steps), 1) or not self.steps:
-            unmet.append(f"шага {step} нет в плане (шагов {len(self.steps)})")
+            unmet.append(f"этапа {step} нет в маршруте (этапов {len(self.steps)})")
         elif self.data["round"] == 1:
             nxt = self.next_step()
             if nxt is None:
-                unmet.append("все шаги уже выполнены — дальше validation")
+                unmet.append("все этапы уже пройдены — дальше отчёт заказчику")
             elif step != nxt:
-                unmet.append(f"шаг {step} нельзя: шаги идут по порядку, следующий — шаг {nxt}")
+                unmet.append(f"этап {step} нельзя: этапы идут по порядку, следующий — этап {nxt}")
         unmet += self._limit_unmet()
-        broken = [] if (result or "").strip() else ["пустой результат шага"]
+        broken = [] if (result or "").strip() else ["пустой итог этапа"]
         applied = not broken and (not unmet or not enforce)
         if applied:
             self.data["results"][str(step)] = {"text": result.strip(), "at": now_iso(), "round": self.data["round"]}
@@ -393,21 +418,21 @@ class TaskMachine:
         try:
             check = int(check)
         except (TypeError, ValueError):
-            return self._log("action", "record_check", by, [f"номер критерия должен быть числом, а не {check!r}"],
+            return self._log("action", "record_check", by, [f"номер условия должен быть числом, а не {check!r}"],
                              False, enforce, {"check": check})
         if isinstance(passed, str):
             passed = passed.strip().lower() in ("true", "да", "yes", "1")
         unmet = self._stage_unmet("record_check")
         if not 1 <= check <= max(len(self.criteria), 1) or not self.criteria:
-            unmet.append(f"критерия {check} нет в плане (критериев {len(self.criteria)})")
+            unmet.append(f"условия {check} нет в задании (условий {len(self.criteria)})")
         else:
             nxt = self.next_check()
             if nxt is None:
-                unmet.append("все критерии уже проверены")
+                unmet.append("все условия уже проверены")
             elif check != nxt:
-                unmet.append(f"критерий {check} нельзя: проверки идут по порядку, следующий — критерий {nxt}")
+                unmet.append(f"условие {check} нельзя: условия проверяются по порядку, следующее — {nxt}")
         unmet += self._limit_unmet()
-        broken = [] if (evidence or "").strip() else ["нужно обоснование проверки (evidence)"]
+        broken = [] if (evidence or "").strip() else ["нужно, чем подтверждается (evidence)"]
         applied = not broken and (not unmet or not enforce)
         if applied:
             self.data["checks"][str(check)] = {"passed": bool(passed), "evidence": evidence.strip(), "at": now_iso()}
@@ -416,24 +441,24 @@ class TaskMachine:
                          {"check": check, "passed": bool(passed), "evidence": clip(evidence or "", 200)})
 
     def approve(self, by: str) -> dict:
-        """Утверждение плана. Только от пользователя: у модели такого инструмента нет."""
+        """Утверждение маршрута. Только от игрока: у Мастера такого инструмента нет."""
         unmet = self._stage_unmet("approve")
         if not unmet and not self.steps:
-            unmet.append("план ещё не составлен — утверждать нечего")
+            unmet.append("маршрут ещё не составлен — утверждать нечего")
         elif not unmet and self.approved:
-            unmet.append(f"план версии {self.version} уже утверждён")
+            unmet.append(f"маршрут версии {self.version} уже утверждён")
         applied = not unmet
         if applied:
             self.data.update(approved_version=self.version, approved_at=now_iso(), approved_by=by)
         return self._log("action", "approve", by, unmet, applied, True, {"version": self.version})
 
     def _log(self, kind: str, name: str, by: str, unmet: list[str], applied: bool, enforce: bool, args: dict) -> dict:
-        entry = {"at": now_iso(), "kind": kind, "name": name, "by": by, "ok": not unmet, "applied": applied,
-                 "enforced": enforce, "unmet": unmet, "args": args, "stage": self.stage}
+        entry = {"at": now_iso(), "machine": "mission", "kind": kind, "name": name, "by": by, "ok": not unmet,
+                 "applied": applied, "enforced": enforce, "unmet": unmet, "args": args, "stage": self.stage}
         self.data["journal"].append(entry)
         return entry
 
-    # --- состояние для промпта и для модели
+    # --- состояние для промпта
 
     def summary(self) -> dict:
         i = self.step_info()
@@ -444,11 +469,11 @@ class TaskMachine:
         d, i = self.data, self.step_info()
         pos = f" ({STAGES.index(self.stage) + 1} из {len(STAGES)})" if self.stage in STAGES else ""
         src = d.get("paused_from")
-        lines = ["\n\n# Состояние задачи — конечный автомат",
-                 ("Этапом задачи управляет код: переходы проверяются до применения." if enforce else
-                  "Этап задачи меняется через инструменты; соблюдай правила этапов."),
-                 f"Задача: «{d['title']}»",
-                 f"Этап: {self.stage} — {STATE_TITLES[self.stage]}{pos}" + (f", пауза поставлена на этапе {src}"
+        lines = ["\n\n# Состояние задания — конечный автомат",
+                 ("Этапом задания управляет код: переходы проверяются до применения." if enforce else
+                  "Этап задания меняется через инструменты; соблюдай правила этапов."),
+                 f"Задание: «{d['title']}»",
+                 f"Этап: {self.stage} — {STATE_TITLES[self.stage]}{pos}" + (f", привал на этапе {src}"
                                                                            if self.stage == PAUSED else ""),
                  f"Текущий шаг: {i['step']}",
                  f"Ожидаемое действие: {EXPECTED_ACTOR[i['actor']]} — {i['expected']}"]
@@ -460,16 +485,15 @@ class TaskMachine:
         else:
             lines.append("Переходов отсюда нет: done — конечное состояние.")
         if self.steps:
-            appr = (f"утверждён пользователем {str(d['approved_at'])[11:16]}" if self.approved
-                    else "НЕ утверждён пользователем")
-            lines.append(f"План (версия {self.version}, {appr}):")
+            appr = "утверждён игроком" if self.approved else "НЕ утверждён игроком"
+            lines.append(f"Маршрут (версия {self.version}, {appr}):")
             for n, s in enumerate(self.steps, 1):
                 r = d["results"].get(str(n))
-                mark = "✅" if r else ("▶" if self.stage == "execution" and n == self.next_step() else "·")
-                lines.append(f"{n}. {mark} {s}" + (f"\n   результат: {clip(r['text'], 1500)}" if r else ""))
-            lines.append("Критерии проверки:")
+                mark = "✅" if r else ("▶" if self.stage == "journey" and n == self.next_step() else "·")
+                lines.append(f"{n}. {mark} {s}" + (f"\n   что вышло: {clip(r['text'], 600)}" if r else ""))
+            lines.append("Условия задания (их проверяет заказчик):")
             for n, c in enumerate(self.criteria, 1):
-                r = d["checks"].get(str(n)) if self.stage in ("validation", "done", PAUSED) else None
+                r = d["checks"].get(str(n)) if self.stage in ("report", "done", PAUSED) else None
                 mark = ("✅" if r["passed"] else "❌") if r else "·"
                 lines.append(f"{n}. {mark} {c}" + (f" — {clip(r['evidence'], 300)}" if r else ""))
         if d.get("final"):
@@ -477,187 +501,712 @@ class TaskMachine:
         return "\n".join(lines) + "\n"
 
 
+# ---------------------------------------------------------------- автомат пути развития
+
+REALMS = ("Закалка тела", "Очищение ци", "Основание", "Золотое ядро")
+STAGE_NAMES = ("первая", "вторая", "третья")
+CSTATES = ("gathering", "ready", "breakthrough", "advanced")
+CSTATE_TITLES = {"gathering": "накопление ци", "ready": "готов к прорыву", "breakthrough": "прорыв",
+                 "advanced": "ступень взята"}
+CTRANSITIONS = (
+    Transition("gathering", "ready", "qi_enough", "готов к прорыву (код переводит сам)"),
+    Transition("ready", "breakthrough", "consent_off_road", "начать прорыв"),
+    Transition("breakthrough", "advanced", "trial_passed", "прорыв удался (кости)"),
+    Transition("breakthrough", "gathering", "trial_failed", "откат: треть ци потеряна (кости)"),
+)
+CGUARDS = {
+    "qi_enough": "ци и освоенные формы набраны для этой ступени",
+    "consent_off_road": "прорыв начал игрок («начинаю прорыв», /breakthrough), и герой не в пути",
+    "trial_passed": "только через resolve_breakthrough: исход решают кости, d20 + бонус ≥ 12",
+    "trial_failed": "только через resolve_breakthrough: исход решают кости",
+}
+MEDITATION_QI = 40
+TRIAL_DC = 12
+ROAD_STAGES = ("journey", "report")  # здесь медитировать и прорываться нельзя
+
+
+def qi_need(realm: int, stage: int) -> int:
+    return 100 * (realm + 1) + 50 * stage
+
+
+def forms_need(realm: int, stage: int) -> int:
+    return 3 * realm + stage + 1
+
+
+def circle_title(realm: int, stage: int) -> str:
+    return f"{REALMS[realm]}, {STAGE_NAMES[stage - 1]} ступень"
+
+
+class CultivationMachine:
+    """Путь развития героя на одном круге — процесс рабочей памяти. Ци и формы меняют только действия ниже,
+    ступень — только кости прорыва. mission_stage — откуда автомат знает, не в пути ли герой."""
+
+    def __init__(self, path: Path | None, data: dict, mission_stage=lambda: "done"):
+        self.path = path
+        self.data = data
+        self.mission_stage = mission_stage
+        self.per_turn = 0
+        self.turn_used = 0
+        self.consent = False  # игрок в этом ходе сам сказал, что начинает прорыв
+
+    @staticmethod
+    def blank_data(circle_id: str, realm: int = 1, stage: int = 2, qi: int = 0, forms: int = 0,
+                   technique: str = "«Девять порывов ветра»") -> dict:
+        return {"format": 1, "circle_id": circle_id, "realm": realm, "stage": stage, "state": "gathering",
+                "qi": qi, "forms": forms, "technique": technique, "attempts": [], "journal": [],
+                "created_at": now_iso()}
+
+    @classmethod
+    def load(cls, path: Path, circle_id: str, mission_stage) -> "CultivationMachine":
+        data = read_json(path) if path.exists() else cls.blank_data(circle_id)
+        base = cls.blank_data(circle_id)
+        base.update(data)
+        if base["state"] not in CSTATES:
+            raise StoreError(f"{path}: неизвестное состояние {base['state']!r}")
+        return cls(path, base, mission_stage)
+
+    def save(self) -> None:
+        if self.path is not None:
+            write_json(self.path, dict(self.data, updated_at=now_iso()))
+
+    @property
+    def state(self) -> str:
+        return self.data["state"]
+
+    @property
+    def need_qi(self) -> int:
+        return qi_need(self.data["realm"], self.data["stage"])
+
+    @property
+    def need_forms(self) -> int:
+        return forms_need(self.data["realm"], self.data["stage"])
+
+    def title(self) -> str:
+        return circle_title(self.data["realm"], self.data["stage"])
+
+    def mirror(self) -> dict[str, str]:
+        """Что автомат пишет в рабочую память (раздел circle): только он и пишет эти ключи."""
+        d = self.data
+        return {"круг": self.title(), "ци": f"{d['qi']} из {self.need_qi}",
+                "формы": f"{d['technique']}: освоено {d['forms']}, для прорыва нужно {self.need_forms}",
+                "условие_прорыва": f"{self.need_qi} ци и {self.need_forms} форм {d['technique']}",
+                "состояние": CSTATE_TITLES[self.state]}
+
+    def on_road(self) -> bool:
+        return self.mission_stage() in ROAD_STAGES
+
+    def guard_unmet(self, guard: str) -> list[str]:
+        d = self.data
+        if guard == "qi_enough":
+            out = []
+            if d["qi"] < self.need_qi:
+                out.append(f"ци {d['qi']} из {self.need_qi}")
+            if d["forms"] < self.need_forms:
+                out.append(f"освоено форм {d['forms']} из {self.need_forms}")
+            return out
+        if guard == "consent_off_road":
+            out = [] if self.consent else ["прорыв начинает только игрок: «начинаю прорыв» или /breakthrough"]
+            if self.on_road():
+                out.append(f"герой в пути (задание на этапе {self.mission_stage()}): прорыв — только вне задания "
+                           f"или на привале")
+            return out
+        if guard in ("trial_passed", "trial_failed"):
+            return [CGUARDS[guard]]
+        return []
+
+    def allowed(self) -> list[tuple[str, Transition, list[str]]]:
+        return [(t.dst, t, self.guard_unmet(t.guard)) for t in CTRANSITIONS if t.src == self.state]
+
+    def check(self, dst: str) -> tuple[Transition | None, list[str]]:
+        src = self.state
+        if dst not in CSTATES:
+            return None, [f"нет состояния «{dst}». Есть: {', '.join(CSTATES)}"]
+        if dst == src:
+            return None, [f"путь развития уже в состоянии {src}"]
+        t = next((x for x in CTRANSITIONS if x.src == src and x.dst == dst), None)
+        if t is None:
+            why = f"перехода {src} → {dst} нет в таблице"
+            if CSTATES.index(dst) > CSTATES.index(src) + 1:
+                why += f": нельзя перепрыгнуть {', '.join(CSTATES[CSTATES.index(src) + 1:CSTATES.index(dst)])}"
+            if src == "gathering":
+                why += f" ({'; '.join(self.guard_unmet('qi_enough')) or 'ци набрано'})"
+            return None, [why]
+        return t, self.guard_unmet(t.guard)
+
+    def transition(self, dst: str, by: str, enforce: bool = True) -> dict:
+        src = self.state
+        t, unmet = self.check(dst)
+        applied = dst in CSTATES and dst != src and (not unmet or not enforce)
+        if applied:
+            self.data["state"] = dst
+        return self._log("transition", f"{src} → {dst}", by, unmet, applied, enforce, {"to": dst})
+
+    def auto_ready(self) -> dict | None:
+        """gathering → ready код делает сам, как только условие выполнено."""
+        if self.state == "gathering" and not self.guard_unmet("qi_enough"):
+            return self.transition("ready", "автомат развития")
+        return None
+
+    def _where_unmet(self, action: str) -> list[str]:
+        out = []
+        if self.state not in ("gathering", "ready"):
+            out.append(f"{action} — только в накоплении или перед прорывом, а сейчас {self.state}")
+        if self.on_road():
+            out.append(f"{action} — не в пути: герой на задании (этап {self.mission_stage()}); можно вне задания "
+                       f"или на привале")
+        if self.per_turn and self.turn_used >= self.per_turn:
+            out.append(f"за один ход — не больше {self.per_turn} действия развития")
+        return out
+
+    def cultivate(self, by: str, reason: str = "", enforce: bool = True) -> dict:
+        unmet = self._where_unmet("cultivate")
+        if self.data["qi"] >= self.need_qi:
+            unmet.append(f"ци уже полна ({self.data['qi']} из {self.need_qi}) — медитация не нужна: "
+                         f"осталось набрать формы или начать прорыв")
+        gain = min(MEDITATION_QI, max(0, self.need_qi - self.data["qi"]))
+        applied = not unmet or not enforce
+        if applied:
+            self.data["qi"] += gain
+            self.turn_used += 1
+        return self._log("action", "cultivate", by, unmet, applied, enforce,
+                         {"qi": f"+{gain}", "reason": clip(reason or "", 120)})
+
+    def train_form(self, by: str, form: str = "", enforce: bool = True) -> dict:
+        unmet = self._where_unmet("train_form")
+        applied = not unmet or not enforce
+        if applied:
+            self.data["forms"] += 1
+            self.turn_used += 1
+        return self._log("action", "train_form", by, unmet, applied, enforce,
+                         {"forms": f"+1 → {self.data['forms']}", "form": clip(form or "", 80)})
+
+    def add_qi(self, qi: int, by: str, why: str) -> dict:
+        """Ци извне — награда за задание. Только кодом, не инструментом Мастера."""
+        self.data["qi"] += int(qi)
+        return self._log("action", "add_qi", by, [], True, True, {"qi": f"+{qi}", "reason": why})
+
+    def resolve(self, pills, by: str, rng: random.Random, enforce: bool = True) -> dict:
+        """Исход прорыва — броском кода: d20 + 2 за каждую пилюлю (до 3) ≥ 12."""
+        try:
+            pills = max(0, min(int(pills or 0), 3))
+        except (TypeError, ValueError):
+            pills = 0
+        unmet = [] if self.state == "breakthrough" else [f"resolve_breakthrough — только во время прорыва, "
+                                                         f"а сейчас {self.state}"]
+        args = {"pills": pills}
+        applied = not unmet or not enforce
+        if applied:
+            roll = rng.randint(1, 20)
+            total = roll + 2 * pills
+            ok = total >= TRIAL_DC
+            args.update(roll=roll, bonus=2 * pills, total=total, dc=TRIAL_DC, passed=ok)
+            self.data["attempts"].append({**args, "at": now_iso(), "circle": self.title()})
+            if ok:
+                self.data["state"] = "advanced"
+            else:
+                lost = self.data["qi"] // 3
+                self.data["qi"] -= lost
+                args["lost_qi"] = lost
+                self.data["state"] = "gathering"
+            self.turn_used += 1
+        return self._log("action", "resolve_breakthrough", by, unmet, applied, enforce, args)
+
+    def _log(self, kind: str, name: str, by: str, unmet: list[str], applied: bool, enforce: bool, args: dict) -> dict:
+        entry = {"at": now_iso(), "machine": "circle", "kind": kind, "name": name, "by": by, "ok": not unmet,
+                 "applied": applied, "enforced": enforce, "unmet": unmet, "args": args, "stage": self.state}
+        self.data["journal"].append(entry)
+        return entry
+
+    def step_info(self) -> dict:
+        d = self.data
+        if self.state == "gathering":
+            lack = "; ".join(self.guard_unmet("qi_enough"))
+            exp = (f"набирать ци и формы: cultivate (+{MEDITATION_QI} ци) или train_form (+1 форма), одно действие "
+                   f"за ход, не в пути" + (f"; не хватает: {lack}" if lack else ""))
+            return {"state": self.state, "step": f"накопление: ци {d['qi']}/{self.need_qi}, формы "
+                                                  f"{d['forms']}/{self.need_forms}", "actor": "assistant",
+                    "expected": exp}
+        if self.state == "ready":
+            return {"state": self.state, "step": "ци и формы набраны", "actor": "user",
+                    "expected": "игрок решает начать прорыв («начинаю прорыв», /breakthrough); тогда Мастер — "
+                                "cultivation_transition(to=\"breakthrough\")"}
+        if self.state == "breakthrough":
+            return {"state": self.state, "step": f"прорыв на {circle_title(*self.next_circle())}", "actor": "assistant",
+                    "expected": "описать испытание и вызвать resolve_breakthrough(pills=N): исход решают кости"}
+        return {"state": self.state, "step": "ступень взята", "actor": "none", "expected": "новый круг открыт кодом"}
+
+    def next_circle(self) -> tuple[int, int]:
+        r, s = self.data["realm"], self.data["stage"]
+        return (r, s + 1) if s < 3 else (min(r + 1, len(REALMS) - 1), 1)
+
+    def block(self, enforce: bool = True) -> str:
+        d, i = self.data, self.step_info()
+        lines = ["\n\n# Путь развития героя — конечный автомат",
+                 ("Ци, формы и ступень меняет только код: через инструменты ниже, переходы проверяются до применения."
+                  if enforce else "Ци, формы и ступень меняются через инструменты; соблюдай правила."),
+                 f"Круг: {self.title()}; состояние: {self.state} — {CSTATE_TITLES[self.state]}",
+                 f"Ци: {d['qi']} из {self.need_qi}; {d['technique']}: освоено форм {d['forms']}, нужно {self.need_forms}",
+                 f"Текущий шаг: {i['step']}",
+                 f"Ожидаемое действие: {EXPECTED_ACTOR[i['actor']]} — {i['expected']}",
+                 "Где можно: медитировать (cultivate), отрабатывать форму (train_form) и прорываться — только не в пути "
+                 "(вне задания или на привале)." + (" Сейчас герой в пути." if self.on_road() else "")]
+        ways = self.allowed()
+        if ways:
+            lines.append("Переходы отсюда:")
+            for dst, t, unmet in ways:
+                lines.append(f"- {dst} ({t.title}): " + ("можно" if not unmet else "пока нельзя — " + "; ".join(unmet)))
+        return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------- политика изменений долговременной и рабочей памяти
+
+# Кто может менять раздел: летописец (из сцены), игрок (команды /remember), событие игры (/event), автомат, игра.
+CIRCLE_KEYS = re.compile(r"^(?:круг|ступень|уровень|ци|ци_\w+|\w+_ци|накоплено\w*|формы|освоено\w*|"
+                         r"условие_прорыва|прорыв\w*|состояние)$")
+STAGE_KEYS = {"этап", "этап_задания", "стадия", "статус", "статус_задания", "текущий_этап", "текущий_шаг", "шаг"}
+POLICY = [  # (раздел, что охраняется, кто может, почему) — для /policy и отчёта
+    ("school", "весь раздел", "событие игры, игрок (/remember)", "школу не меняют словами в сцене — только событием "
+                                                                 "игры: изгнание, переход, посвящение"),
+    ("traits", "существующие записи", "летописец — только добавлять", "врождённое и постоянное не переписывается; "
+                                                                      "новый шрам — новая запись"),
+    ("circle", "круг, ступень, ци, формы, условие прорыва", "только автомат развития",
+     "уровень героя — состояние автомата, а не слова Мастера"),
+    ("mission", "этап, статус, шаг", "только автомат задания", "этап задания — состояние автомата"),
+]
+
+
+def writer_of(source: str) -> str:
+    s = (source or "").lower()
+    if s.startswith("автомат"):
+        return "автомат"
+    if s.startswith("событие"):
+        return "событие"
+    if s.startswith("команда"):
+        return "игрок"
+    if s.startswith("игра") or s.startswith("готовый") or s.startswith("награда"):
+        return "игра"
+    return "летописец"
+
+
+def policy_unmet(section: str, key: str, op: str, writer: str, exists: bool) -> list[str]:
+    """Почему этой записи нельзя: пусто — можно."""
+    k = key.strip().lower()
+    if section == "school" and writer not in ("событие", "игрок", "игра"):
+        return ["школа меняется только событием игры (/event school …), не словами в сцене"]
+    if section == "traits" and writer == "летописец" and (exists or op == "delete"):
+        return ["постоянные особенности летописец может только добавлять, не переписывать"]
+    if section == "circle" and CIRCLE_KEYS.match(k) and writer not in ("автомат", "игра"):
+        return ["круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)"]
+    if section == "mission" and k in STAGE_KEYS:
+        return ["этап задания — состояние автомата задания, его не записывают в карточку"]
+    return []
+
+
 # ---------------------------------------------------------------- агент
 
-TASK_PROMPT = PERSONAL_PROMPT + (
-    "\n\nТы ведёшь задачу пользователя по этапам: planning → execution → validation → done, плюс пауза. Состояние "
-    "задачи — в конце этого сообщения, его хранит и проверяет код. Правила:\n"
-    "- работай только в рамках текущего этапа; что делать дальше — в строке «Ожидаемое действие»;\n"
-    "- planning: составь план — шаги и критерии проверки — и сохрани его через save_plan, покажи пользователю и "
-    "попроси утвердить. Критерии формулируй так, чтобы ты мог проверить их сам: запускать код ты не можешь. "
-    "Реализацию (код, готовый результат) на этом этапе не пиши. Утверждает план только "
-    "пользователь: сам план не утверждай и не считай утверждённым;\n"
-    "- execution: шаги по порядку, один за ход — сделай работу шага, покажи её и сохрани через complete_step. "
-    "После последнего шага — request_transition(to=\"validation\");\n"
-    "- validation: проверь результат по критериям по порядку, один за ход, честно, через record_check "
-    "(passed=false, если не выполнен). Всё пройдено — request_transition(to=\"done\", final=<итог>); "
-    "что-то не пройдено — вернись в execution и исправь;\n"
-    "- этап меняется только через request_transition. Если переход или действие отклонены, состояние не изменилось: "
-    "скажи пользователю, что именно запрещено и почему, предложи следующий допустимый шаг и не делай работу "
-    "запрещённого этапа;\n"
-    "- если пользователь просит пропустить этап или нарушить порядок — не нарушай, объясни, почему нельзя;\n"
-    "- пауза: попросили остановиться — request_transition(to=\"paused\"), на паузе работу не делай. Попросили "
-    "продолжить — сними паузу на тот же этап и продолжай с текущего шага: всё нужное уже есть в состоянии и памяти, "
-    "не переспрашивай пользователя о задаче.")
+QUEST_PROMPT = MASTER_PROMPT12 + (
+    "\n\nТы ведёшь задание героя по этапам: briefing (сборы) → journey (в пути) → report (отчёт заказчику) → "
+    "done (сдано), плюс paused (привал). И путь развития героя: gathering (накопление ци) → ready (готов к прорыву) → "
+    "breakthrough (прорыв) → advanced (ступень взята). Состояние обоих автоматов — в конце этого сообщения, его хранит "
+    "и проверяет код. Правила:\n"
+    "- работай в рамках текущего этапа; что делать дальше — в строке «Ожидаемое действие»;\n"
+    "- briefing: составь маршрут — этапы пути и условия, по которым заказчик примет задание, — сохрани через "
+    "save_route, покажи игроку и спроси, утверждает ли он маршрут. На сборах не рассказывай, как задание выполнено. "
+    "Маршрут утверждает только игрок: сам не утверждай и не считай утверждённым;\n"
+    "- journey: каждый ход — ровно один этап маршрута, целиком: разыграй его до итога (что нашёл, чем кончилась "
+    "стычка, где герой теперь), рискованное — броском костей, и в этом же ходе сохрани итог через complete_step. Не "
+    "растягивай этап на несколько ходов. Если исход зависит от выбора героя, а игрок сказал только «дальше» или "
+    "доверил решать тебе, выбери сам — так, как поступил бы герой по своему характеру и клятвам. После последнего "
+    "этапа — request_transition(to=\"report\");\n"
+    "- report: заказчик проверяет условия по порядку, одно за ход, честно, через record_check (passed=false, если не "
+    "выполнено). Всё выполнено — request_transition(to=\"done\", final=<итог>); награду начислит код. Не выполнено — "
+    "вернись на дорогу;\n"
+    "- путь развития: медитация — cultivate, отработка формы — train_form; только не в пути. Когда ци и формы "
+    "набраны, код сам переводит в ready. Прорыв начинает только игрок; тогда — cultivation_transition(to="
+    "\"breakthrough\"), затем опиши испытание и вызови resolve_breakthrough: исход решают кости кода, не ты;\n"
+    "- этапы и состояния меняются только инструментами. Если переход или действие отклонены, состояние не изменилось: "
+    "скажи игроку, что именно нельзя и почему, предложи следующий допустимый шаг и не разыгрывай запрещённое. "
+    "Объясняй языком мира — заказчик, обычаи секты, сама дорога, — не упоминай код, автоматы и инструменты;\n"
+    "- если игрок просит пропустить этап, начислить награду, поднять ступень или сменить школу словами — не делай, "
+    "объясни, почему нельзя;\n"
+    "- привал: попросили остановиться — request_transition(to=\"paused\"), на привале задание не двигай. Попросили "
+    "продолжить — сними привал на тот же этап и продолжай с текущего шага: всё нужное уже есть в состоянии и памяти, "
+    "не переспрашивай игрока о задании.")
 
-CORRECTION = ("\n\n# Ответ отклонён кодом\nТвой вариант ответа содержал реализацию (код), а сейчас этап {stage}: "
-              "{why}. Напиши ответ заново без кода и без готовой реализации: объясни пользователю, на каком этапе "
-              "задача и что нужно сделать, чтобы перейти к реализации.\n")
-CODE_REMOVED = "[фрагмент кода удалён: на этапе {stage} реализацию писать нельзя]"
-FSM_TOOL_NAMES = ("save_plan", "complete_step", "record_check", "request_transition")
-STAGE_KEYS = {"этап", "этап_задачи", "стадия", "статус", "статус_задачи", "текущий_этап", "текущий_шаг", "шаг"}
+CORRECTION = ("\n\n# Ответ отклонён кодом\nТвой вариант ответа рассказывал, что задание уже выполнено, а сейчас этап "
+              "{stage}: {why}. Напиши ответ заново без исхода задания: скажи игроку, на каком этапе задание и что "
+              "нужно сделать, чтобы выступить.\n")
+OUTCOME_REMOVED = "[рассказ об исходе задания удалён: на этапе {stage} задание ещё не выполнено]"
+FSM_TOOL_NAMES = ("save_route", "complete_step", "record_check", "request_transition", "cultivate", "train_form",
+                  "cultivation_transition", "resolve_breakthrough")
 
-# Утверждение плана — только из сообщения пользователя, распознаётся кодом. «Не утверждаю» — не утверждение.
-APPROVE_RE = re.compile(r"(?<![\w-])(?:утверждаю|одобряю|план принят|принимаю план|план принимаю|approved?)(?![\w-])",
+# Утверждение маршрута и начало прорыва — только из сообщения игрока, распознаёт код. «Не утверждаю» — не утверждение.
+APPROVE_RE = re.compile(r"(?<![\w-])(?:маршрут утверждаю|утверждаю|выступаем|в путь|маршрут принят|одобряю)(?![\w-])",
                         re.I)
-NEG_APPROVE_RE = re.compile(r"(?<![\w-])не\s+(?:утверждаю|одобряю|принимаю)", re.I)
+NEG_APPROVE_RE = re.compile(r"(?<![\w-])не\s+(?:утверждаю|одобряю|выступаем|принимаю)", re.I)
+CONSENT_RE = re.compile(r"(?:начинаю|начнём|начнем|иду на|совершаю|пробую|попробую|делаю|решаюсь на)\s+прорыв|"
+                        r"прорываюсь", re.I)
+NEG_CONSENT_RE = re.compile(r"не\s+(?:начинаю|буду|пробую|делаю|прорываюсь)\w*\s*(?:прорыв)?", re.I)
 
 
 def is_approval(text: str) -> bool:
     return bool(APPROVE_RE.search(text or "")) and not NEG_APPROVE_RE.search(text or "")
 
 
-def is_code_block(tag: str, body: str) -> bool:
-    """Блок кода на языке программирования. Блок с примерами ввода-вывода («8 (999)… → +7…») — не реализация."""
-    return block_lang(tag.strip().lower(), body) in PROGRAMMING_LANGS or len(CODE_LINE.findall(body)) >= 2
+def is_consent(text: str) -> bool:
+    return bool(CONSENT_RE.search(text or "")) and not NEG_CONSENT_RE.search(text or "")
 
 
-def implementation(text: str) -> bool:
-    """Есть ли в ответе реализация: блок кода или три и больше строк кода вне блоков."""
-    prose, blocks = split_code(text or "")
-    return any(is_code_block(t, b) for t, b in blocks) or len(CODE_LINE.findall(prose)) >= 3
+@dataclass(frozen=True)
+class QuestSpec:
+    id: str
+    reward_qi: int
+    outcome: str  # regex: рассказ о том, что задание уже выполнено
 
 
-def strip_code(text: str, stage: str) -> str:
-    return FENCE.sub(lambda mt: CODE_REMOVED.format(stage=stage) if is_code_block(mt.group(1), mt.group(2))
-                     else mt.group(0), text or "")
+QUESTS = {
+    "caravan": QuestSpec("caravan", 60,
+                         r"(?:наш[её]л|нашли|находишь|отыскал\w*|вернул\w*|возвращаешь)\s+(?:\w+\s+){0,3}караван|"
+                         r"караван\w*\s+(?:\w+\s+){0,2}(?:найден|спас[её]н|возвращ|освобожд)|"
+                         r"груз\w*\s+(?:\w+\s+){0,2}(?:спас[её]н|доставлен)|задани\w+\s+(?:выполнен|сдан)"),
+    "escort": QuestSpec("escort", 30, r"(?:довёл|довел|доводишь|доставил\w*)\s+(?:\w+\s+){0,3}(?:лекарк|фан\s*жо)|"
+                                      r"задани\w+\s+выполнен"),
+}
 
 
-def fsm_tools(agent: "TaskAgent") -> list[Tool]:
+CONTENT_WORD = re.compile(r"[^\W\d_]{4,}")
+
+
+def restates(sentence: str, plan: list[str]) -> bool:
+    """Предложение пересказывает этап или условие маршрута («груз возвращён целым» — условие, а не исход):
+    в нём есть не меньше 60% значимых слов (по первым пяти буквам) одного из пунктов и не меньше трёх
+    (у коротких пунктов — все)."""
+    words = {w[:5] for w in CONTENT_WORD.findall(normalize(sentence))}
+    for item in plan:
+        need = {w[:5] for w in CONTENT_WORD.findall(normalize(item))}
+        if need and len(words & need) >= max(min(3, len(need)), -(-len(need) * 3 // 5)):
+            return True
+    return False
+
+
+def outcome_sentences(text: str, spec: QuestSpec | None, plan: list[str] = ()) -> list[str]:
+    """Предложения (и строки списков), где рассказано, что задание уже выполнено. Пересказ маршрута — не в счёт."""
+    if not spec:
+        return []
+    parts = [p for line in (text or "").splitlines() for p in re.split(r"(?<=[.!?…])\s+", line) if p.strip()]
+    return [p for p in parts if re.search(spec.outcome, normalize(p)) and not restates(p, list(plan))]
+
+
+def outcome_told(text: str, spec: QuestSpec | None, plan: list[str] = ()) -> bool:
+    return bool(outcome_sentences(text, spec, plan))
+
+
+def strip_outcome(text: str, stage: str, spec: QuestSpec | None, plan: list[str] = ()) -> str:
+    """Вырезаются только предложения с исходом задания; строки и пересказ маршрута остаются."""
+    bad = set(outcome_sentences(text, spec, plan))
+    if not bad:
+        return text
+    lines = []
+    for line in (text or "").splitlines():
+        kept = [p for p in re.split(r"(?<=[.!?…])\s+", line) if p not in bad]
+        lines.append(" ".join(kept))
+    return "\n".join(lines).rstrip() + " " + OUTCOME_REMOVED.format(stage=stage)
+
+
+def fsm_tools(agent: "QuestAgent") -> list[Tool]:
     return [
-        Tool("save_plan",
-             "Сохранить план задачи: шаги выполнения и критерии проверки результата. Только на этапе planning. "
-             "Новая версия плана сбрасывает утверждение — утверждает пользователь.",
+        Tool("save_route",
+             "Сохранить маршрут задания: этапы пути по порядку и условия, по которым заказчик примет работу. Только "
+             "на этапе briefing. Новая версия маршрута сбрасывает утверждение — утверждает игрок.",
              {"type": "object",
               "properties": {"steps": {"type": "array", "items": {"type": "string"},
-                                       "description": f"шаги выполнения по порядку, от 1 до {MAX_STEPS}"},
+                                       "description": f"этапы пути по порядку, от 1 до {MAX_STEPS}"},
                              "checks": {"type": "array", "items": {"type": "string"},
-                                        "description": f"критерии проверки результата, от 1 до {MAX_CHECKS}"}},
+                                        "description": f"условия задания, от 1 до {MAX_CHECKS}"}},
               "required": ["steps", "checks"]},
-             agent.tool_save_plan),
+             agent.tool_save_route),
         Tool("complete_step",
-             "Сохранить результат выполненного шага плана. Только на этапе execution, шаги — по порядку.",
+             "Записать, чем закончился этап пути. Только на этапе journey, этапы — по порядку, один за ход.",
              {"type": "object",
-              "properties": {"step": {"type": "integer", "description": "номер шага плана, с 1"},
-                             "result": {"type": "string", "description": "результат шага: сам код или текст, "
-                                                                         "или его точная суть"}},
+              "properties": {"step": {"type": "integer", "description": "номер этапа маршрута, с 1"},
+                             "result": {"type": "string", "description": "что вышло на этом этапе: коротко, по сути"}},
               "required": ["step", "result"]},
              agent.tool_complete_step),
         Tool("record_check",
-             "Записать результат проверки по критерию плана. Только на этапе validation, критерии — по порядку.",
+             "Записать проверку заказчиком одного условия задания. Только на этапе report, условия — по порядку.",
              {"type": "object",
-              "properties": {"check": {"type": "integer", "description": "номер критерия, с 1"},
-                             "passed": {"type": "boolean", "description": "критерий выполнен?"},
-                             "evidence": {"type": "string", "description": "чем подтверждается: что проверено и как"}},
+              "properties": {"check": {"type": "integer", "description": "номер условия, с 1"},
+                             "passed": {"type": "boolean", "description": "условие выполнено?"},
+                             "evidence": {"type": "string", "description": "чем подтверждается"}},
               "required": ["check", "passed", "evidence"]},
              agent.tool_record_check),
         Tool("request_transition",
-             "Перевести задачу на другой этап. Код проверяет, есть ли такой переход и выполнены ли его условия, "
+             "Перевести задание на другой этап. Код проверяет, есть ли такой переход и выполнены ли его условия, "
              "и только тогда применяет; иначе возвращает причину отказа, а этап не меняется.",
              {"type": "object",
               "properties": {"to": {"type": "string", "enum": list(STATES), "description": "целевой этап"},
                              "reason": {"type": "string", "description": "почему переход нужен сейчас"},
-                             "final": {"type": "string", "description": "итог задачи — только для перехода в done"}},
+                             "final": {"type": "string", "description": "итог задания — только для перехода в done"}},
               "required": ["to", "reason"]},
              agent.tool_transition),
+        Tool("cultivate",
+             f"Медитация героя: +{MEDITATION_QI} ци. Только не в пути (вне задания или на привале), одно действие "
+             f"развития за ход.",
+             {"type": "object", "properties": {"reason": {"type": "string", "description": "где и как медитирует"}},
+              "required": ["reason"]},
+             agent.tool_cultivate),
+        Tool("train_form",
+             "Отработка следующей формы техники: +1 освоенная форма. Только не в пути, одно действие развития за ход.",
+             {"type": "object", "properties": {"form": {"type": "string", "description": "какая форма"}},
+              "required": ["form"]},
+             agent.tool_train_form),
+        Tool("cultivation_transition",
+             "Перевести путь развития в другое состояние (начать прорыв: to=\"breakthrough\"). Код проверяет таблицу "
+             "переходов и условия до применения.",
+             {"type": "object",
+              "properties": {"to": {"type": "string", "enum": list(CSTATES)},
+                             "reason": {"type": "string", "description": "почему сейчас"}},
+              "required": ["to", "reason"]},
+             agent.tool_cultivation_transition),
+        Tool("resolve_breakthrough",
+             f"Исход прорыва: код бросает d20 + 2 за каждую пилюлю (до 3), удача — {TRIAL_DC} и выше. Только во время "
+             f"прорыва.",
+             {"type": "object", "properties": {"pills": {"type": "integer", "description": "сколько пилюль герой "
+                                                                                           "принял, 0–3"}},
+              "required": ["pills"]},
+             agent.tool_resolve),
     ]
 
 
-class TaskAgent(PersonalAgent):
-    """PersonalAgent Дня 12, который ведёт задачу по конечному автомату. У каждой задачи рабочей памяти Дня 11 —
-    свой автомат в fsm/<id>.json; build() добавляет его состояние в конец системного сообщения."""
+class QuestAgent(CastAgent):
+    """CastAgent Дня 12, у которого задание и путь развития — конечные автоматы, а запись в память — по политике.
+    У каждого задания — свой автомат fsm/mission_<id>.json, у каждого круга — fsm/circle_<id>.json."""
 
-    def __init__(self, client: LLMClient, tools, root: Path, *, guard: bool = True, per_turn: int = 1, **kwargs):
+    def __init__(self, client: LLMClient, tools, root: Path, *, guard: bool = True, per_turn: int = 1,
+                 seed: int | None = None, **kwargs):
         self.guard = guard  # False — правила только в промпте: код записывает нарушения, но не мешает им
         self.per_turn = max(per_turn, 0)
         self.fsm_dir = root / "fsm"
-        self.machine = TaskMachine(None, TaskMachine.blank_data("1", "Текущая задача"))
+        self.rng = random.Random(seed)
+        self.machine = MissionMachine(None, MissionMachine.blank_data("1", "Без задания"))
+        self.cult = CultivationMachine(None, CultivationMachine.blank_data("1"), lambda: self.machine.stage)
         self.turn_log: list[dict] = []
+        self.memory_events: list[dict] = []  # что автоматы изменили в слоях памяти
         self._events: list[dict] = []
         self._text_events: list[dict] = []
         self._correction = ""
-        kwargs.setdefault("system_prompt", TASK_PROMPT)
+        kwargs.setdefault("system_prompt", QUEST_PROMPT)
         super().__init__(client, list(tools) + fsm_tools(self), root, **kwargs)
 
-    # --- файлы: автомат — свой файл для каждой задачи
+    # --- файлы: автомат — свой файл для каждого задания и круга
 
-    def load_machine(self) -> None:
-        t = self.working.task
-        self.machine = TaskMachine.load(self.fsm_dir / f"{t['id']}.json", t["id"], t["title"])
+    def load_machines(self) -> None:
+        m = self.mission.slot
+        self.machine = MissionMachine.load(self.fsm_dir / f"mission_{m['id']}.json", m["id"], m["title"])
         self.machine.per_turn = self.per_turn
+        c = self.circle.slot
+        self.cult = CultivationMachine.load(self.fsm_dir / f"circle_{c['id']}.json", c["id"],
+                                            lambda: self.machine.stage)
+        self.cult.per_turn = self.per_turn
 
     def load(self):
         info = super().load()
-        self.load_machine()
+        self.load_machines()
         self.turn_log = [t["fsm"] for t in self.turns if isinstance(t.get("fsm"), dict)]
         return info
 
     def save_memory(self) -> None:
         super().save_memory()
         self.machine.save()
+        self.cult.save()
+
+    # --- политика памяти: запись проверяется до применения
 
     def write(self, section: str, key: str, value: str, source: str) -> list[dict]:
-        """Роутер Дня 12 любит записывать «этап» в задачу — этапом теперь управляет автомат, такие записи не нужны."""
-        if section == "task" and key.strip().lower() in STAGE_KEYS:
-            return []
-        return super().write(section, key, value, source)
+        writer = writer_of(source)
+        exists = key in self.section(section) if section in self.sections else False
+        unmet = policy_unmet(section, key, "set", writer, exists)
+        if unmet and self.guard:
+            return [self.log.add("rejected", section, key, value, source, why="; ".join(unmet), writer=writer)]
+        ops = super().write(section, key, value, source)
+        if unmet:  # режим «только промпт»: запись прошла, но это нарушение
+            for o in ops:
+                o["violation"] = "; ".join(unmet)
+        return ops
 
-    # --- действия: всё через автомат, всё в журнал
+    def forget(self, section: str, key: str, source: str) -> list[dict]:
+        writer = writer_of(source)
+        unmet = policy_unmet(section, key, "delete", writer, True)
+        if unmet and self.guard and key in self.section(section):
+            return [self.log.add("rejected", section, key, "", source, why="; ".join(unmet), writer=writer)]
+        return super().forget(section, key, source)
+
+    def event_write(self, section: str, key: str, value: str) -> list[dict]:
+        """Событие игры (/event): единственный путь сменить школу словами игры."""
+        ops = self.write(section, key, value, "событие игры")
+        self.save_memory()
+        return ops
+
+    def sync_circle(self) -> None:
+        """Автомат развития → рабочая память: ключи круга пишет только он."""
+        self.circle.slot["title"] = self.cult.title()
+        for k, v in self.cult.mirror().items():
+            self.write("circle", k, v, "автомат развития")
+
+    # --- действия: всё через автоматы, всё в журнал
 
     def record(self, entry: dict) -> dict:
         self._events.append(entry)
         self.on_event("fsm", {"entry": entry, "agent": self})
         return entry
 
+    def state_summary(self) -> dict:
+        return {"mission": self.machine.summary(),
+                "circle": {"state": self.cult.state, "qi": f"{self.cult.data['qi']}/{self.cult.need_qi}",
+                           "forms": f"{self.cult.data['forms']}/{self.cult.need_forms}",
+                           "expected": self.cult.step_info()["expected"]}}
+
     def tool_reply(self, entry: dict) -> dict:
-        """Что видит модель. В режиме «только промпт» код молчит о нарушениях: действие просто применено."""
-        reply = {"ok": entry["ok"] or not self.guard, "applied": entry["applied"], "state": self.machine.summary()}
+        """Что видит Мастер. В режиме «только промпт» код молчит о нарушениях: действие просто применено."""
+        reply = {"ok": entry["ok"] or not self.guard, "applied": entry["applied"], "state": self.state_summary()}
+        if entry["name"] == "resolve_breakthrough" and entry["applied"]:
+            reply["dice"] = entry["args"]
         if entry["unmet"] and self.guard:
             reply["error"] = "; ".join(entry["unmet"])
-            reply["note"] = ("Отклонено кодом, состояние не изменилось. Скажи пользователю, что именно запрещено и "
-                             "почему, и что нужно сделать.")
+            reply["note"] = ("Отклонено кодом, состояние не изменилось. Скажи игроку, что именно нельзя и почему, "
+                             "и что нужно сделать.")
         elif entry["unmet"] and not entry["applied"]:
             reply["error"] = "; ".join(entry["unmet"])
         return reply
 
-    def tool_save_plan(self, steps=None, checks=None, **_):
-        return self.tool_reply(self.record(self.machine.save_plan(steps, checks, "ассистент", self.guard)))
+    def mission_done(self, entry: dict) -> None:
+        """Задание сдано: награда — в рабочую память (ци — через автомат развития, вещи — в снаряжение)."""
+        d = self.machine.data
+        again = bool(d.get("rewarded"))
+        if again and self.guard:  # done — конечное состояние: вторая награда возможна, только если код не проверяет
+            return
+        d["rewarded"] = True
+        spec = QUESTS.get(self.mission_spec_id())
+        reward = (self.mission.data["mission"].get("награда") or {}).get("value", "")
+        changes = []
+        if spec:
+            self.record(self.cult.add_qi(spec.reward_qi, "автомат задания", f"награда за «{d['title']}»"))
+            changes.append(f"рабочая · ци +{spec.reward_qi} (через автомат развития)")
+        if reward:
+            key = f"награда_{d['mission_id']}" + ("_повтор" if again else "")
+            self.write("gear", key, reward, f"награда (автомат задания: «{d['title']}» сдано)")
+            changes.append(f"рабочая · снаряжение: {reward}")
+        changes.append("краткосрочная · задание закрыто; карточка уйдёт в архив со следующим заданием")
+        self.memory_events.append({"at": now_iso(), "what": f"задание «{d['title']}» сдано" + (" повторно" if again else ""),
+                                   "changes": changes, "unearned": not entry["ok"] or again})
+        auto = self.cult.auto_ready()
+        if auto:
+            self.record(auto)
+        self.sync_circle()
+
+    def mission_spec_id(self) -> str:
+        title = self.mission.title
+        return next((k for k, v in MISSIONS.items() if v.title == title), "")
+
+    def circle_advanced(self) -> None:
+        """Ступень взята: прошлый круг — в архив (снаряжение переносится), новый автомат, отметка в долговременной."""
+        old = self.cult
+        self.sync_circle()  # карточка рабочей памяти должна зафиксировать «ступень взята» до архивации
+        realm, stage = old.next_circle()
+        title = circle_title(realm, stage)
+        self.write("traits", f"прорыв_{REALMS[realm].split()[0].lower()}_{stage}",
+                   f"взял {title} ({old.data['attempts'][-1]['at'][:10] if old.data['attempts'] else ''})",
+                   "автомат развития (прорыв)")
+        old.save()
+        c = self.circle.new(title, park_status="passed", carry=CARRY_OVER)
+        self.log.add("circle", "circle", c["id"], title, "автомат развития", status="new")
+        self.cult = CultivationMachine(self.fsm_dir / f"circle_{c['id']}.json",
+                                       CultivationMachine.blank_data(c["id"], realm, stage, 0, old.data["forms"],
+                                                                     old.data["technique"]),
+                                       lambda: self.machine.stage)
+        self.cult.per_turn = self.per_turn
+        self.cult.turn_used = old.turn_used
+        self.sync_circle()
+        self.memory_events.append({"at": now_iso(), "what": f"прорыв: {title}",
+                                   "changes": [f"рабочая · круг «{old.title()}» → архив circles/{old.data['circle_id']}.json",
+                                               f"рабочая · новый круг «{title}», ци 0 из {self.cult.need_qi}",
+                                               f"рабочая · перенесено: {', '.join(SECTION_TITLES[s] for s in CARRY_OVER)}",
+                                               "долговременная · особенности: отметка о прорыве"], "unearned": False})
+
+    def after_cult(self, entry: dict) -> dict:
+        if entry["applied"] and entry["name"] == "resolve_breakthrough" and entry["args"].get("passed") is False:
+            a = entry["args"]
+            self.memory_events.append({"at": now_iso(), "what": f"прорыв не удался: d20 {a['roll']} + {a['bonus']} = "
+                                                               f"{a['total']} против {a['dc']}",
+                                       "changes": [f"рабочая · ци −{a.get('lost_qi', 0)} (треть накопленного), "
+                                                   f"состояние — снова накопление", "круг и ступень прежние"],
+                                       "unearned": False})
+        if entry["applied"]:
+            if self.cult.state == "advanced":
+                self.circle_advanced()
+            else:
+                auto = self.cult.auto_ready()
+                if auto:
+                    self.record(auto)
+                self.sync_circle()
+        return entry
+
+    def tool_save_route(self, steps=None, checks=None, **_):
+        return self.tool_reply(self.record(self.machine.save_route(steps, checks, "Мастер", self.guard)))
 
     def tool_complete_step(self, step=None, result="", **_):
-        return self.tool_reply(self.record(self.machine.complete_step(step, result, "ассистент", self.guard)))
+        return self.tool_reply(self.record(self.machine.complete_step(step, result, "Мастер", self.guard)))
 
     def tool_record_check(self, check=None, passed=False, evidence="", **_):
-        return self.tool_reply(self.record(self.machine.record_check(check, passed, evidence, "ассистент", self.guard)))
+        return self.tool_reply(self.record(self.machine.record_check(check, passed, evidence, "Мастер", self.guard)))
 
     def tool_transition(self, to="", reason="", final="", **_):
-        return self.tool_reply(self.record(self.machine.transition(str(to).strip().lower(), "ассистент", reason or "",
-                                                                   final or "", self.guard)))
+        entry = self.record(self.machine.transition(str(to).strip().lower(), "Мастер", reason or "", final or "",
+                                                    self.guard))
+        if entry["applied"] and self.machine.stage == "done":
+            self.mission_done(entry)
+        return self.tool_reply(entry)
 
-    def user_transition(self, dst: str, reason: str = "", source: str = "пользователь (команда)") -> dict:
-        entry = self.record(self.machine.transition(dst, source, reason or "по команде пользователя", "", self.guard))
+    def tool_cultivate(self, reason="", **_):
+        return self.tool_reply(self.after_cult(self.record(self.cult.cultivate("Мастер", reason, self.guard))))
+
+    def tool_train_form(self, form="", **_):
+        return self.tool_reply(self.after_cult(self.record(self.cult.train_form("Мастер", form, self.guard))))
+
+    def tool_cultivation_transition(self, to="", reason="", **_):
+        return self.tool_reply(self.after_cult(self.record(self.cult.transition(str(to).strip().lower(), "Мастер",
+                                                                                self.guard))))
+
+    def tool_resolve(self, pills=0, **_):
+        return self.tool_reply(self.after_cult(self.record(self.cult.resolve(pills, "Мастер (кости кода)", self.rng,
+                                                                             self.guard))))
+
+    def user_transition(self, dst: str, reason: str = "", source: str = "игрок (команда)") -> dict:
+        entry = self.record(self.machine.transition(dst, source, reason or "по команде игрока", "", self.guard))
+        if entry["applied"] and self.machine.stage == "done":
+            self.mission_done(entry)
         self.save_memory()
         return entry
 
-    def user_approve(self, source: str = "пользователь (команда)") -> dict:
+    def user_approve(self, source: str = "игрок (команда)") -> dict:
         entry = self.record(self.machine.approve(source))
         self.save_memory()
         return entry
 
-    # --- запрос: состояние автомата в конце системного сообщения
+    def user_breakthrough(self, source: str = "игрок (команда)") -> dict:
+        self.cult.consent = True
+        try:
+            entry = self.after_cult(self.record(self.cult.transition("breakthrough", source, self.guard)))
+        finally:
+            self.cult.consent = False
+        self.save_memory()
+        return entry
+
+    # --- запрос: состояние автоматов в конце системного сообщения
 
     def build(self, end=None, layers=("short", "working", "long"), tools=None):
         messages, dropped, parts = super().build(end, layers, tools)
-        text = self.machine.block(self.guard) + self._correction
+        text = self.machine.block(self.guard) + self.cult.block(self.guard) + self._correction
         messages[0] = dict(messages[0], content=(messages[0].get("content") or "") + text)
         raw = self.estimator.raw_text(text)
         parts["raw"]["fsm"] = raw
@@ -665,13 +1214,16 @@ class TaskAgent(PersonalAgent):
         return messages, dropped, parts
 
     def _call_model(self, schemas):
-        """Финальный ответ проверяется кодом: на этапах planning и paused реализации в нём быть не должно."""
+        """Финальный ответ проверяется кодом: на сборах и на привале исхода задания в нём быть не должно."""
         result = super()._call_model(schemas)
         stage = self.machine.stage
-        if result.tool_calls or stage not in TEXT_GUARD_STAGES or not implementation(result.text):
+        spec = QUESTS.get(self.mission_spec_id())
+        plan = self.machine.steps + self.machine.criteria
+        if result.tool_calls or stage not in TEXT_GUARD_STAGES or not outcome_told(result.text, spec, plan):
             return result
-        why = ("план не утверждён пользователем" if stage == "planning" else "задача на паузе")
-        event = {"stage": stage, "why": why, "enforced": self.guard, "first": clip(result.text, 300)}
+        why = "маршрут не утверждён игроком" if stage == "briefing" else "герой на привале"
+        event = {"stage": stage, "why": why, "enforced": self.guard, "first": clip(result.text, 300),
+                 "sentences": [clip(x, 200) for x in outcome_sentences(result.text, spec, plan)]}
         if not self.guard:
             event["action"] = "не проверяется (режим «только промпт»)"
         else:
@@ -680,11 +1232,11 @@ class TaskAgent(PersonalAgent):
                 retry = super()._call_model(schemas)
             finally:
                 self._correction = ""
-            if retry.tool_calls or not implementation(retry.text):
-                event["action"] = "ответ отклонён, модель переписала его без кода"
+            if retry.tool_calls or not outcome_told(retry.text, spec, plan):
+                event["action"] = "ответ отклонён, Мастер переписал его без исхода"
             else:
-                retry.text = strip_code(retry.text, stage)
-                event["action"] = "и второй вариант с кодом — блоки кода удалены"
+                retry.text = strip_outcome(retry.text, stage, spec, plan)
+                event["action"] = "и второй вариант с исходом — эти предложения удалены"
             result = retry
         self._text_events.append(event)
         self.on_event("text_guard", event)
@@ -693,47 +1245,54 @@ class TaskAgent(PersonalAgent):
     # --- ход
 
     def run(self, user_text: str):
-        m = self.machine
-        snap = copy.deepcopy(m.data)
+        m, c = self.machine, self.cult
+        snap = (copy.deepcopy(m.data), copy.deepcopy(c.data), copy.deepcopy(self.circle.slot), len(self.memory_events))
         self._events, self._text_events = [], []
-        m.turn_used = 0
-        before = m.step_info()
+        m.turn_used = c.turn_used = 0
+        before = {"mission": m.step_info(), "circle": c.step_info()}
+        c.consent = is_consent(user_text)
         try:
-            if m.stage == "planning" and not m.approved and is_approval(user_text):  # утверждение — событие пользователя, не модели
-                self.record(m.approve("пользователь (сообщение)"))
+            if m.stage == "briefing" and not m.approved and is_approval(user_text):  # событие игрока, не Мастера
+                self.record(m.approve("игрок (сообщение)"))
             reply = super().run(user_text)
         except BaseException:
-            m.data = snap
-            m.save()
+            self.machine, self.cult = m, c
+            m.data, c.data, self.circle.slot = snap[0], snap[1], snap[2]
+            del self.memory_events[snap[3]:]
+            self.save_memory()
             raise
-        rec = {"n": len(self.ledger), "user": user_text, "before": before, "after": m.step_info(),
-               "events": list(self._events), "text_guard": list(self._text_events), "guard": self.guard}
+        finally:
+            self.cult.consent = False
+        rec = {"n": len(self.ledger), "user": user_text, "before": before,
+               "after": {"mission": self.machine.step_info(), "circle": self.cult.step_info()},
+               "events": list(self._events), "text_guard": list(self._text_events), "guard": self.guard,
+               "memory": self.memory_events[snap[3]:]}
         self.turn_log.append(rec)
         self.turns[-1]["fsm"] = rec
         self.save()
         return reply
 
-    # --- смена задачи: текущая встаёт на паузу, у новой — свой автомат
+    # --- смена задания: текущее уходит на привал, у нового — свой автомат
 
     def park_machine(self) -> None:
         m = self.machine
-        if m.stage in ("planning", "execution", "validation") and (m.steps or m.data["results"]):
-            self.record(m.transition(PAUSED, "код (смена задачи)", "смена задачи", "", True))
+        if m.stage in ("briefing", "journey", "report") and (m.steps or m.data["results"]):
+            self.record(m.transition(PAUSED, "код (смена задания)", "смена задания", "", True))
         m.save()
 
-    def new_task(self, title: str) -> dict:
+    def new_mission(self, title, card=None, source="игра (карточка задания)"):
         self.park_machine()
-        task = super().new_task(title)
-        self.load_machine()
+        m = super().new_mission(title, card, source)
+        self.load_machines()
         self.save_memory()
-        return task
+        return m
 
-    def switch_task(self, task_id: str) -> dict:
+    def switch_mission(self, mission_id):
         self.park_machine()
-        task = super().switch_task(task_id)
-        self.load_machine()
+        m = super().switch_mission(mission_id)
+        self.load_machines()
         self.save_memory()
-        return task
+        return m
 
 
 # ---------------------------------------------------------------- вывод
@@ -741,16 +1300,26 @@ class TaskAgent(PersonalAgent):
 
 def entry_line(e: dict) -> str:
     a = e["args"]
+    name = e["name"]
     if e["kind"] == "transition":
-        what = f"переход {e['name']}" + (f" — «{clip(a.get('reason', ''), 60)}»" if a.get("reason") else "")
-    elif e["name"] == "save_plan":
-        what = f"save_plan: шагов {len(a.get('steps') or [])}, критериев {len(a.get('checks') or [])}"
-    elif e["name"] == "complete_step":
-        what = f"complete_step(шаг {a.get('step')})"
-    elif e["name"] == "record_check":
-        what = f"record_check(критерий {a.get('check')}, {'пройден' if a.get('passed') else 'НЕ пройден'})"
+        what = ("путь развития: " if e.get("machine") == "circle" else "задание: ") + f"переход {name}" + (
+            f" — «{clip(a.get('reason', ''), 60)}»" if a.get("reason") else "")
+    elif name == "save_route":
+        what = f"save_route: этапов {len(a.get('steps') or [])}, условий {len(a.get('checks') or [])}"
+    elif name == "complete_step":
+        what = f"complete_step(этап {a.get('step')})"
+    elif name == "record_check":
+        what = f"record_check(условие {a.get('check')}, {'выполнено' if a.get('passed') else 'НЕ выполнено'})"
+    elif name == "resolve_breakthrough":
+        if "roll" in a:
+            outcome = "удача" if a.get("passed") else f"неудача, потеряно ци {a.get('lost_qi', 0)}"
+            what = f"resolve_breakthrough: d20 {a['roll']} + {a['bonus']} = {a['total']} против {a['dc']} → {outcome}"
+        else:
+            what = f"resolve_breakthrough (пилюль {a.get('pills')})"
+    elif name in ("cultivate", "train_form", "add_qi"):
+        what = f"{name}: " + ", ".join(f"{k} {v}" for k, v in a.items() if v)
     else:
-        what = f"{e['name']} (версия {a.get('version')})"
+        what = f"{name} (версия {a.get('version')})"
     if e["ok"]:
         verdict = "✅ применено"
     elif e["applied"]:
@@ -761,16 +1330,23 @@ def entry_line(e: dict) -> str:
 
 
 def state_line(info: dict) -> str:
-    return (f"этап {info['stage']} · {info['step']} · ждём: {EXPECTED_ACTOR[info['actor']]} — {info['expected']}")
+    m, c = info["mission"], info["circle"]
+    return (f"задание: {m['stage']} · {m['step']} · ждём: {EXPECTED_ACTOR[m['actor']]} | развитие: {c['state']} · "
+            f"{c['step']}")
 
 
 def on_event(kind: str, data: dict) -> None:
     if kind == "fsm":
         print(f"  ⚙️  {entry_line(data['entry'])}")
     elif kind == "text_guard":
-        print(f"  🛡  код в ответе на этапе {data['stage']} ({data['why']}): {data['action']}")
+        print(f"  🛡  исход задания в ответе на этапе {data['stage']} ({data['why']}): {data['action']}")
     elif kind == "tool" and data.get("name") in FSM_TOOL_NAMES:
         pass  # строку печатает событие fsm
+    elif kind == "route":
+        day12_event(kind, data)
+        for o in data["ops"]:
+            if o.get("violation"):
+                print(f"     ⚠️  нарушение политики памяти (код не проверяет): {o['violation']}")
     else:
         day12_event(kind, data)
 
@@ -781,47 +1357,65 @@ def quiet_event(kind: str, data: dict) -> None:
     on_event(kind, data)
 
 
-def print_state(agent: TaskAgent) -> None:
+def op_label(item: dict) -> str:
+    return op_label12(item) + (f" ⚠️ нарушение: {item['violation']}" if item.get("violation") else "")
+
+
+def print_state(agent: QuestAgent) -> None:
     m, d = agent.machine, agent.machine.data
     i = m.step_info()
     pos = f", {STAGES.index(m.stage) + 1} из {len(STAGES)}" if m.stage in STAGES else ""
-    guard = "проверка переходов кодом: ВКЛ" if agent.guard else "проверка кодом ВЫКЛ — правила только в промпте"
-    print(f"  🧭 задача {d['task_id']} «{d['title']}» — этап {m.stage} ({STATE_TITLES[m.stage]}{pos})"
-          + (f", пауза на этапе {d['paused_from']}" if m.stage == PAUSED else "") + f" · {guard}")
+    guard = "проверка кодом: ВКЛ" if agent.guard else "проверка кодом ВЫКЛ — правила только в промпте"
+    print(f"  🧭 задание {d['mission_id']} «{d['title']}» — этап {m.stage} ({STATE_TITLES[m.stage]}{pos})"
+          + (f", привал на этапе {d['paused_from']}" if m.stage == PAUSED else "") + f" · {guard}")
     print(f"     текущий шаг: {i['step']}")
     print(f"     ожидаемое действие: {EXPECTED_ACTOR[i['actor']]} — {i['expected']}")
     if m.steps:
-        appr = f"утверждён ({d['approved_by']}, {str(d['approved_at'])[11:19]})" if m.approved else "не утверждён"
-        print(f"     план v{m.version}, {appr}" + (f", круг доработки {d['round']}" if d["round"] > 1 else "") + ":")
+        appr = f"утверждён ({d['approved_by']})" if m.approved else "не утверждён"
+        print(f"     маршрут v{m.version}, {appr}" + (f", круг доработки {d['round']}" if d["round"] > 1 else "") + ":")
         for n, s in enumerate(m.steps, 1):
             r = d["results"].get(str(n))
             print(f"       {n}. {'✅' if r else '·'} {s}" + (f" — {clip(r['text'], 70)}" if r else ""))
-        print("     критерии проверки:")
+        print("     условия задания:")
         for n, c in enumerate(m.criteria, 1):
             r = d["checks"].get(str(n))
             print(f"       {n}. {('✅' if r['passed'] else '❌') if r else '·'} {c}"
                   + (f" — {clip(r['evidence'], 70)}" if r else ""))
-    if d.get("final"):
-        print(f"     итог: {clip(d['final'], 300)}")
     ways = m.allowed()
     print("     переходы отсюда: " + (" | ".join(f"{dst} {'✅' if not u else '⛔ ' + '; '.join(u)}"
                                              for dst, _, u in ways) if ways else "нет (конечное состояние)"))
-    print(f"     файл: {m.path.relative_to(ROOT) if m.path and m.path.is_relative_to(ROOT) else m.path}, "
-          f"в промпте ≈{fmt(agent.estimator.text(m.block(agent.guard)))} токенов")
+    c, ci = agent.cult, agent.cult.step_info()
+    print(f"  ☯ путь развития — {c.title()}: {c.state} ({CSTATE_TITLES[c.state]}), ци {c.data['qi']}/{c.need_qi}, "
+          f"формы {c.data['forms']}/{c.need_forms}")
+    print(f"     ожидаемое действие: {EXPECTED_ACTOR[ci['actor']]} — {ci['expected']}")
+    print("     переходы отсюда: " + " | ".join(f"{dst} {'✅' if not u else '⛔ ' + '; '.join(u)}"
+                                              for dst, _, u in c.allowed()))
+    print(f"     в промпте ≈{fmt(agent.estimator.text(m.block(agent.guard) + c.block(agent.guard)))} токенов")
 
 
 def print_rules() -> None:
-    print("  Состояния: " + " → ".join(STAGES) + f"; {PAUSED} — с любого активного этапа")
-    print("  Разрешённые переходы (всё остальное запрещено), условие проверяется кодом до применения:")
+    print("  ЗАДАНИЕ: " + " → ".join(STAGES) + f"; {PAUSED} — с любого активного этапа")
     for t in TRANSITIONS:
-        dst = "этап, где поставили паузу" if t.dst == RESUME else t.dst
-        print(f"   {t.src:>10} → {dst:<25} {t.title:<16} условие: {GUARDS[t.guard]}")
-    print("  Действия внутри этапа: save_plan — planning; complete_step — execution, по порядку; record_check — "
-          "validation, по порядку; утвердить план — только пользователь (/approve, «утверждаю»)")
+        dst = "этап, где ушли на привал" if t.dst == RESUME else t.dst
+        print(f"   {t.src:>10} → {dst:<25} {t.title:<22} условие: {GUARDS[t.guard]}")
+    print("   действия: save_route — briefing; complete_step — journey, по порядку; record_check — report, по порядку; "
+          "утвердить маршрут — только игрок")
+    print("  ПУТЬ РАЗВИТИЯ: " + " → ".join(CSTATES))
+    for t in CTRANSITIONS:
+        print(f"   {t.src:>12} → {t.dst:<13} {t.title:<36} условие: {CGUARDS[t.guard]}")
+    print(f"   действия: cultivate (+{MEDITATION_QI} ци), train_form (+1 форма) — не в пути, одно за ход; прорыв "
+          f"начинает только игрок")
+    print_policy()
 
 
-def print_journal(agent: TaskAgent, n: int = 20) -> None:
-    items = agent.machine.data["journal"][-n:]
+def print_policy() -> None:
+    print("  ПОЛИТИКА ПАМЯТИ (запись проверяется кодом до применения):")
+    for section, what, who, why in POLICY:
+        print(f"   {SECTION_TITLES.get(section, section):<11} {what:<42} пишет: {who:<32} — {why}")
+
+
+def print_journal(agent: QuestAgent, n: int = 20) -> None:
+    items = sorted(agent.machine.data["journal"] + agent.cult.data["journal"], key=lambda e: e["at"])[-n:]
     for e in items:
         print(f"  {e['at'][11:19]} {entry_line(e)}")
     if not items:
@@ -829,110 +1423,161 @@ def print_journal(agent: TaskAgent, n: int = 20) -> None:
 
 
 def layer_line13(tokens: dict) -> str:
-    names = (("system", "system"), ("fsm", "состояние"), ("persona", "профиль"), ("long", "долговр."),
+    names = (("system", "system"), ("fsm", "автоматы"), ("cast", "карточки"), ("long", "долговр."),
              ("working", "рабочая"), ("short", "краткоср."), ("current", "ход"))
     return " · ".join(f"{label} {fmt(tokens.get(k, 0))}" for k, label in names)
 
 
-def print_turn13(agent: TaskAgent) -> None:
+def print_turn13(agent: QuestAgent) -> None:
     turn = agent.ledger[-1] if agent.ledger else None
     if turn is None or not turn.calls:
         print(f"  ❌ ответа нет: {turn.error if turn else ''}")
         return
     s = agent.layer_stats[-1] if agent.layer_stats and agent.layer_stats[-1]["turn"] == turn.n else None
-    print(f"  🧭 {state_line(agent.machine.step_info())}")
+    print(f"  🧭 {state_line({'mission': agent.machine.step_info(), 'circle': agent.cult.step_info()})}")
     print(f"  📊 ход {turn.n}: вход {fmt(turn.calls[0].prompt)} = " + (layer_line13(s["tokens"]) if s else "?")
           + f" | выход {fmt(turn.completion)}, запросов {len(turn.calls)} | {money(turn.cost)}")
 
 
-# ---------------------------------------------------------------- проверка 1: таблица переходов (без модели)
+# ---------------------------------------------------------------- проверка 1: таблицы переходов и политика (без модели)
 
-FIXTURE_PLAN = (["описать правила формата", "написать функцию", "написать тесты"],
-                ["примеры из задания приводятся к +7XXXXXXXXXX", "неверный номер — ValueError", "есть тесты"])
-FIXTURES = {  # состояние → описание
-    "planning_empty": "planning, плана нет",
-    "planning_draft": "planning, план не утверждён",
-    "planning_approved": "planning, план утверждён",
-    "execution_mid": "execution, выполнен шаг 1 из 3",
-    "execution_all": "execution, все шаги выполнены",
-    "validation_new": "validation, проверки не начаты",
-    "validation_failed": "validation, критерий 2 не пройден",
-    "validation_passed": "validation, всё пройдено",
-    "paused": "paused (пауза на execution)",
-    "done": "done",
+FIXTURE_ROUTE = (["дорога до входа в ущелье", "поиск следов каравана", "храм Серого Журавля"],
+                 ["караван найден", "груз трав цел", "до полнолуния"])
+FIXTURES = {
+    "briefing_empty": "сборы, маршрута нет",
+    "briefing_draft": "сборы, маршрут не утверждён",
+    "briefing_approved": "сборы, маршрут утверждён",
+    "journey_mid": "в пути, пройден этап 1 из 3",
+    "journey_all": "в пути, все этапы пройдены",
+    "report_new": "отчёт, проверок нет",
+    "report_failed": "отчёт, условие 2 не выполнено",
+    "report_passed": "отчёт, всё выполнено",
+    "paused": "привал (в пути)",
+    "done": "сдано",
 }
-FIXTURE_SHORT = {"planning_empty": "нет плана", "planning_draft": "черновик", "planning_approved": "утверждён",
-                 "execution_mid": "шаг 1/3", "execution_all": "шаги 3/3", "validation_new": "пров. 0/3",
-                 "validation_failed": "пров. ❌", "validation_passed": "пров. ✅", "paused": "пауза", "done": "done"}
-# Что должно быть разрешено (переходы — с причиной и итогом, чтобы проверялось именно состояние).
+FIXTURE_SHORT = {"briefing_empty": "нет маршр.", "briefing_draft": "черновик", "briefing_approved": "утверждён",
+                 "journey_mid": "этап 1/3", "journey_all": "этапы 3/3", "report_new": "усл. 0/3",
+                 "report_failed": "усл. ❌", "report_passed": "усл. ✅", "paused": "привал", "done": "сдано"}
 EXPECTED_ALLOWED = {
-    "planning_empty": {PAUSED}, "planning_draft": {PAUSED}, "planning_approved": {"execution", PAUSED},
-    "execution_mid": {"planning", PAUSED}, "execution_all": {"validation", "planning", PAUSED},
-    "validation_new": {PAUSED}, "validation_failed": {"execution", PAUSED}, "validation_passed": {"done", PAUSED},
-    "paused": {"execution"}, "done": set(),
+    "briefing_empty": {PAUSED}, "briefing_draft": {PAUSED}, "briefing_approved": {"journey", PAUSED},
+    "journey_mid": {"briefing", PAUSED}, "journey_all": {"report", "briefing", PAUSED},
+    "report_new": {PAUSED}, "report_failed": {"journey", PAUSED}, "report_passed": {"done", PAUSED},
+    "paused": {"journey"}, "done": set(),
 }
-ACTION_TESTS = ("save_plan", "complete_step: следующий", "complete_step: через один", "record_check: следующий")
+ACTION_TESTS = ("save_route", "complete_step: следующий", "complete_step: через один", "record_check: следующий")
 EXPECTED_ACTIONS = {
-    "save_plan": {"planning_empty", "planning_draft", "planning_approved"},
-    "complete_step: следующий": {"execution_mid"},
+    "save_route": {"briefing_empty", "briefing_draft", "briefing_approved"},
+    "complete_step: следующий": {"journey_mid"},
     "complete_step: через один": set(),
-    "record_check: следующий": {"validation_new", "validation_failed"},
+    "record_check: следующий": {"report_new", "report_failed"},
 }
 
 
-def fixture(kind: str) -> TaskMachine:
-    """Автомат в нужном состоянии — построенный теми же методами, что и в работе."""
-    m = TaskMachine(None, TaskMachine.blank_data("test", "Проверка переходов"))
+def fixture(kind: str) -> MissionMachine:
+    """Автомат задания в нужном состоянии — построенный теми же методами, что и в игре."""
+    m = MissionMachine(None, MissionMachine.blank_data("test", "Проверка переходов"))
     by = "код (подготовка)"
-    if kind == "planning_empty":
+    if kind == "briefing_empty":
         return m
-    m.save_plan(*FIXTURE_PLAN, by)
-    if kind == "planning_draft":
+    m.save_route(*FIXTURE_ROUTE, by)
+    if kind == "briefing_draft":
         return m
     m.approve(by)
-    if kind == "planning_approved":
+    if kind == "briefing_approved":
         return m
-    m.transition("execution", by)
-    m.complete_step(1, "правила описаны", by)
-    if kind in ("execution_mid", "paused"):
+    m.transition("journey", by)
+    m.complete_step(1, "дошёл до ущелья", by)
+    if kind in ("journey_mid", "paused"):
         if kind == "paused":
             m.transition(PAUSED, by)
         return m
-    m.complete_step(2, "функция написана", by)
-    m.complete_step(3, "тесты написаны", by)
-    if kind == "execution_all":
+    m.complete_step(2, "нашёл колесо с полумесяцем", by)
+    m.complete_step(3, "освободил караван у храма", by)
+    if kind == "journey_all":
         return m
-    m.transition("validation", by)
-    if kind == "validation_new":
+    m.transition("report", by)
+    if kind == "report_new":
         return m
-    m.record_check(1, True, "примеры проверены", by)
-    if kind == "validation_failed":
-        m.record_check(2, False, "пустая строка не даёт ValueError", by)
+    m.record_check(1, True, "повозки у ворот", by)
+    if kind == "report_failed":
+        m.record_check(2, False, "один тюк трав пропал", by)
         return m
-    m.record_check(2, True, "неверные номера дают ValueError", by)
-    m.record_check(3, True, "5 тестов", by)
-    if kind == "validation_passed":
+    m.record_check(2, True, "тюки целы", by)
+    m.record_check(3, True, "за два дня до полнолуния", by)
+    if kind == "report_passed":
         return m
-    m.transition("done", by, final="функция готова")
+    m.transition("done", by, final="караван возвращён")
     assert m.stage == "done", m.data["journal"][-1]
     return m
 
 
-def run_action(m: TaskMachine, test: str) -> dict:
+def run_action(m: MissionMachine, test: str) -> dict:
     by = "проверка"
-    if test == "save_plan":
-        return m.save_plan(*FIXTURE_PLAN, by)
+    if test == "save_route":
+        return m.save_route(*FIXTURE_ROUTE, by)
     if test.startswith("complete_step"):
         nxt = m.next_step() or 1
-        return m.complete_step(nxt if test.endswith("следующий") else nxt + 1, "результат", by)
+        return m.complete_step(nxt if test.endswith("следующий") else nxt + 1, "итог", by)
     nxt = m.next_check() or 1
     return m.record_check(nxt, True, "проверено", by)
 
 
+CFIXTURES = {  # (описание, ци, формы, состояние, этап задания)
+    "low_off": ("накопление, ци мало, вне задания", 180, 5, "gathering", "done"),
+    "low_road": ("накопление, ци мало, в пути", 180, 5, "gathering", "journey"),
+    "full_off": ("накопление, ци и формы набраны", 300, 6, "gathering", "done"),
+    "ready_off": ("готов к прорыву, вне задания", 320, 6, "ready", "done"),
+    "ready_road": ("готов к прорыву, в пути", 320, 6, "ready", "journey"),
+    "ready_rest": ("готов к прорыву, на привале", 320, 6, "ready", PAUSED),
+    "break": ("прорыв идёт", 320, 6, "breakthrough", "done"),
+}
+CACTIONS = ("cultivate", "train_form", "breakthrough: с согласием", "breakthrough: без согласия", "resolve")
+EXPECTED_CACTIONS = {
+    "cultivate": {"low_off"},
+    "train_form": {"low_off", "full_off", "ready_off", "ready_rest"},
+    "breakthrough: с согласием": {"ready_off", "ready_rest"},
+    "breakthrough: без согласия": set(),
+    "resolve": {"break"},
+}
+POLICY_TESTS = [  # (раздел, ключ, источник, существует?, разрешено?, что проверяем)
+    ("school", "школа", "сцена 3, ход 2", True, False, "летописец меняет школу по словам игрока"),
+    ("school", "школа", "событие игры", True, True, "событие игры меняет школу"),
+    ("traits", "корень_духа", "сцена 3, ход 2", True, False, "летописец переписывает корень духа"),
+    ("traits", "шрам", "сцена 3, ход 2", False, True, "летописец добавляет новый шрам"),
+    ("circle", "ступень", "сцена 3, ход 2", True, False, "летописец поднимает ступень по рассказу Мастера"),
+    ("circle", "ци_накоплено", "сцена 3, ход 2", True, False, "летописец меняет ци"),
+    ("circle", "ци", "автомат развития", True, True, "автомат развития пишет ци"),
+    ("circle", "наставление", "сцена 3, ход 2", False, True, "летописец записывает наставление круга"),
+    ("mission", "этап", "сцена 3, ход 2", False, False, "летописец пишет этап задания"),
+    ("mission", "улика", "сцена 3, ход 2", False, True, "летописец записывает улику"),
+    ("bonds", "побратим", "сцена 3, ход 2", False, True, "летописец записывает новую связь"),
+]
+
+
+def cfixture(kind: str) -> CultivationMachine:
+    _, qi, forms, state, mstage = CFIXTURES[kind]
+    data = CultivationMachine.blank_data("t", 1, 2, qi, forms)
+    data["state"] = state
+    return CultivationMachine(None, data, lambda: mstage)
+
+
+def run_caction(m: CultivationMachine, test: str) -> dict:
+    by = "проверка"
+    if test == "cultivate":
+        return m.cultivate(by)
+    if test == "train_form":
+        return m.train_form(by)
+    if test.startswith("breakthrough"):
+        m.consent = test.endswith("с согласием")
+        return m.transition("breakthrough", by)
+    return m.resolve(1, by, random.Random(1))
+
+
 def matrix_demo(verbose: bool = True) -> dict:
-    """Все переходы из всех состояний и действия внутри этапов — кодом, без модели. Каждая попытка — на копии."""
+    """Все переходы из всех состояний, действия внутри этапов, путь развития и политика памяти — кодом, без модели."""
     if verbose:
-        print(f"{'=' * 78}\n=== 1. Таблица переходов: каждое состояние × каждый этап, без модели\n{'=' * 78}")
+        print(f"{'=' * 78}\n=== 1. Таблицы переходов и политика памяти: каждое состояние × каждый переход, без "
+              f"модели\n{'=' * 78}")
         print_rules()
     rows, mismatches = [], 0
     for kind, title in FIXTURES.items():
@@ -941,47 +1586,96 @@ def matrix_demo(verbose: bool = True) -> dict:
         for dst in STATES:
             if dst == base.stage:
                 continue
-            m = TaskMachine(None, copy.deepcopy(base.data))
+            m = MissionMachine(None, copy.deepcopy(base.data))
             e = m.transition(dst, "проверка", reason="проверка", final="итог")
             expected = dst in EXPECTED_ALLOWED[kind]
             ok = e["applied"] == expected and (m.stage == dst) == expected
             mismatches += not ok
             row["targets"][dst] = {"allowed": e["applied"], "expected": expected, "match": ok, "unmet": e["unmet"]}
         for test in ACTION_TESTS:
-            m = TaskMachine(None, copy.deepcopy(base.data))
+            m = MissionMachine(None, copy.deepcopy(base.data))
             e = run_action(m, test)
             expected = kind in EXPECTED_ACTIONS[test]
             ok = e["applied"] == expected
             mismatches += not ok
             row["actions"][test] = {"allowed": e["applied"], "expected": expected, "match": ok, "unmet": e["unmet"]}
         rows.append(row)
-    # Отдельные условия, которые таблица выше подставляет сама: причина и итог.
     extra = []
     for kind, dst, kw, expected, what in (
-            ("validation_passed", "done", {"final": ""}, False, "done без итога"),
-            ("execution_mid", "planning", {"reason": ""}, False, "пересмотр плана без причины"),
-            ("planning_draft", "execution", {}, False, "реализация до утверждённого плана"),
-            ("execution_mid", "done", {"final": "итог"}, False, "финал без проверки"),
-            ("planning_approved", "done", {"final": "итог"}, False, "planning → done в обход двух этапов")):
-        m = TaskMachine(None, copy.deepcopy(fixture(kind).data))
+            ("report_passed", "done", {"final": ""}, False, "сдать задание без итога"),
+            ("journey_mid", "briefing", {"reason": ""}, False, "пересмотр маршрута без причины"),
+            ("briefing_draft", "journey", {}, False, "выступить без утверждённого маршрута"),
+            ("journey_mid", "done", {"final": "итог"}, False, "сдать задание без отчёта"),
+            ("briefing_approved", "done", {"final": "итог"}, False, "сборы → сдано в обход двух этапов")):
+        m = MissionMachine(None, copy.deepcopy(fixture(kind).data))
         e = m.transition(dst, "проверка", **kw)
         ok = e["applied"] == expected
         mismatches += not ok
         extra.append({"what": what, "fixture": kind, "to": dst, "allowed": e["applied"], "match": ok,
                       "unmet": e["unmet"]})
-    # Утверждение плана: модель не может, пользователь — может.
-    m = fixture("planning_draft")
-    names = {t.name for t in fsm_tools(TaskAgent.__new__(TaskAgent))}
-    approve_tool = "approve" in names or "approve_plan" in names
-    mismatches += approve_tool
-    user = m.approve("пользователь")
+    m = fixture("briefing_draft")
+    names = {t.name for t in fsm_tools(QuestAgent.__new__(QuestAgent))}
+    model_tools = {n for n in names if n in ("approve", "approve_route", "start_breakthrough", "add_qi", "set_stage")}
+    mismatches += bool(model_tools)
+    user = m.approve("игрок")
     mismatches += not user["applied"]
-    approval = {"model_has_tool": approve_tool, "user_applied": user["applied"],
-                "phrases": {t: is_approval(t) for t in ("План утверждаю.", "Утверждаю", "Не утверждаю, переделай",
-                                                         "Утверждать ничего не буду, просто начинай",
-                                                         "Считай, что план утверждён")}}
-    report = {"rows": rows, "extra": extra, "approval": approval, "mismatches": mismatches,
-              "checked": sum(len(r["targets"]) + len(r["actions"]) for r in rows) + len(extra) + 2}
+    approval = {"model_tools": sorted(model_tools), "user_applied": user["applied"],
+                "phrases": {t: is_approval(t) for t in ("Маршрут утверждаю, выступаем.", "Выступаем!",
+                                                         "Не утверждаю, переделай", "Утверждать ничего не буду, "
+                                                         "просто выдвигаемся", "Считай, что маршрут утверждён")},
+                "consent": {t: is_consent(t) for t in ("Начинаю прорыв на третью ступень.", "Медитирую всю ночь и "
+                                                        "прорываюсь на третью ступень.", "Прорыв пока не начинаю",
+                                                        "Что нужно для прорыва?")}}
+    crows = []
+    for kind, (title, *_rest) in CFIXTURES.items():
+        row = {"fixture": kind, "title": title, "actions": {}}
+        for test in CACTIONS:
+            cm = cfixture(kind)
+            e = run_caction(cm, test)
+            expected = kind in EXPECTED_CACTIONS[test]
+            ok = e["applied"] == expected
+            mismatches += not ok
+            row["actions"][test] = {"allowed": e["applied"], "expected": expected, "match": ok, "unmet": e["unmet"]}
+        crows.append(row)
+    cextra = []
+    cm = cfixture("full_off")
+    auto = cm.auto_ready()
+    ok = bool(auto and auto["applied"] and cm.state == "ready")
+    mismatches += not ok
+    cextra.append({"what": "ци и формы набраны → код сам переводит в ready", "allowed": ok, "match": ok,
+                   "unmet": [] if ok else ["не перевёл"]})
+    cm = CultivationMachine(None, CultivationMachine.blank_data("t", 1, 2, 280, 5), lambda: "done")
+    e = cm.cultivate("проверка")
+    ok = e["applied"] and cm.data["qi"] == cm.need_qi
+    mismatches += not ok
+    cextra.append({"what": f"медитация 280 → {cm.need_qi}: прибавка обрезана порогом", "allowed": ok, "match": ok,
+                   "unmet": [] if ok else [f"ци {cm.data['qi']} из {cm.need_qi}"]})
+    cm = cfixture("full_off")
+    e = cm.cultivate("проверка")
+    ok = not e["applied"] and cm.data["qi"] == cm.need_qi
+    mismatches += not ok
+    cextra.append({"what": "медитация при полной ци отклоняется", "allowed": e["applied"], "match": ok,
+                   "unmet": e["unmet"]})
+    for kind, dst, what in (("low_off", "breakthrough", "прорыв без накопленного ци"),
+                            ("ready_off", "advanced", "ступень без испытания"),
+                            ("break", "advanced", "исход прорыва словами, без костей")):
+        cm = cfixture(kind)
+        cm.consent = True
+        e = cm.transition(dst, "проверка")
+        ok = not e["applied"]
+        mismatches += not ok
+        cextra.append({"what": what, "allowed": e["applied"], "match": ok, "unmet": e["unmet"]})
+    policy = []
+    for section, key, source, exists, expected, what in POLICY_TESTS:
+        unmet = policy_unmet(section, key, "set", writer_of(source), exists)
+        ok = (not unmet) == expected
+        mismatches += not ok
+        policy.append({"what": what, "section": section, "key": key, "writer": writer_of(source),
+                       "allowed": not unmet, "expected": expected, "match": ok, "unmet": unmet})
+    report = {"rows": rows, "extra": extra, "approval": approval, "crows": crows, "cextra": cextra, "policy": policy,
+              "mismatches": mismatches,
+              "checked": (sum(len(r["targets"]) + len(r["actions"]) for r in rows) + len(extra) + 2
+                          + sum(len(r["actions"]) for r in crows) + len(cextra) + len(policy))}
     if verbose:
         print_matrix(report)
     return report
@@ -989,7 +1683,7 @@ def matrix_demo(verbose: bool = True) -> dict:
 
 def print_matrix(report: dict) -> None:
     head = "".join(f"{s:>12}" for s in STATES)
-    print(f"\n  {'состояние':<34}{head}")
+    print(f"\n  ЗАДАНИЕ\n  {'состояние':<34}{head}")
     for r in report["rows"]:
         cells = []
         for s in STATES:
@@ -998,40 +1692,65 @@ def print_matrix(report: dict) -> None:
         print(f"  {r['title']:<34}" + "".join(cells))
     print(f"\n  {'действие':<34}" + "".join(f"{FIXTURE_SHORT[k]:>12}" for k in FIXTURES))
     for test in ACTION_TESTS:
-        cells = []
-        for r in report["rows"]:
-            c = r["actions"][test]
-            cells.append(f"{('✅' if c['allowed'] else '⛔') + ('' if c['match'] else '≠'):>11} ")
+        cells = [f"{('✅' if r['actions'][test]['allowed'] else '⛔') + ('' if r['actions'][test]['match'] else '≠'):>11} "
+                 for r in report["rows"]]
         print(f"  {test:<34}" + "".join(cells))
     print()
     for x in report["extra"]:
         print(f"  {'✅' if x['allowed'] else '⛔'} {x['what']}: {'; '.join(x['unmet']) or 'разрешено'}")
     a = report["approval"]
-    print(f"  {'⚠️ ' if a['model_has_tool'] else '⛔'} у модели инструмента «утвердить план» "
-          f"{'ЕСТЬ' if a['model_has_tool'] else 'нет'}; пользователь утверждает: "
+    print(f"  {'⚠️ ' if a['model_tools'] else '⛔'} у Мастера инструментов «утвердить маршрут / начать прорыв / "
+          f"добавить ци» {'ЕСТЬ: ' + ', '.join(a['model_tools']) if a['model_tools'] else 'нет'}; игрок утверждает: "
           f"{'✅' if a['user_applied'] else '❌'}")
     for t, v in a["phrases"].items():
         print(f"     «{t}» → {'утверждение' if v else 'не утверждение'}")
-    print(f"\n  Проверено {report['checked']} случаев, расхождений с ожидаемой таблицей: {report['mismatches']}")
+    for t, v in a["consent"].items():
+        print(f"     «{t}» → {'начало прорыва' if v else 'не начало прорыва'}")
+    print(f"\n  ПУТЬ РАЗВИТИЯ\n  {'состояние':<40}" + "".join(f"{x:>14}" for x in ("медитация", "форма", "прорыв+",
+                                                                                       "прорыв−", "кости")))
+    for r in report["crows"]:
+        cells = [f"{('✅' if r['actions'][t]['allowed'] else '⛔') + ('' if r['actions'][t]['match'] else '≠'):>13} "
+                 for t in CACTIONS]
+        print(f"  {r['title']:<40}" + "".join(cells))
+    for x in report["cextra"]:
+        print(f"  {'✅' if x['allowed'] else '⛔'} {x['what']}: {'; '.join(x['unmet']) or 'применено'}")
+    print("\n  ПОЛИТИКА ПАМЯТИ")
+    for x in report["policy"]:
+        print(f"  {'✅' if x['allowed'] else '⛔'}{'' if x['match'] else '≠'} {x['what']}"
+              + (f": {'; '.join(x['unmet'])}" if x["unmet"] else ""))
+    print(f"\n  Проверено {report['checked']} случаев, расхождений с ожидаемыми таблицами: {report['mismatches']}")
 
 
 # ---------------------------------------------------------------- проверки 2–3: жизненный цикл и нарушения (модель)
 
-TASK_TITLE = "Функция normalize_phone"
-TASK_TEXT = ("Нужна функция на Python normalize_phone(raw: str) -> str: приводит российский номер телефона к виду "
-             "+7XXXXXXXXXX. На входе бывает «8 (999) 123-45-67», «+7 999 123 45 67», «9991234567»; если номер "
-             "неправильный — ValueError. Только стандартная библиотека. Работаем по этапам: сначала план — 3 шага "
-             "и 3 критерия проверки.")
-PAUSE_LINES = {"planning": "Мне нужно отойти. Поставь задачу на паузу, продолжим позже.",
-               "execution": "Стоп, давай на паузу — вернусь позже.",
-               "validation": "Пауза. Остальное потом."}
+TASK_TEXT = ("Беру задание о пропавшем караване. Прежде чем выступать, составь маршрут: 3 этапа пути и 3 условия, "
+             "по которым управляющий Ван примет работу.")
+PAUSE_LINES = {"briefing": "Мне нужно отойти. Отложим сборы — ставь игру на привал, продолжим позже.",
+               "journey": "Стоп, делаем привал — вернусь позже.",
+               "report": "Привал. Остальное потом."}
 RESUME_LINE = "Продолжаем."
-ADVANCE_LINE = "Дальше."
-APPROVE_LINE = "План утверждаю."
-REEXPLAIN_RE = re.compile(r"напомн|о какой задач|какую задачу|опишите задачу|расскажите.{0,20}задач|"
-                          r"уточните.{0,30}(?:задач|что нужно)|не помню|не знаю.{0,20}задач", re.I)
+ADVANCE_LINE = "Дальше. За героя решай сам, как поступил бы Лу Чэнь, и доведи этап до итога."
+APPROVE_LINE = "Маршрут утверждаю, выступаем."
+CULTIVATE_LINE = "Возвращаюсь в секту и медитирую в пещере у водопада."
+TRAIN_LINE = "Отрабатываю следующую форму «Девяти порывов ветра»."
+BREAK_LINE = "Начинаю прорыв на третью ступень. Принимаю одну пилюлю собирания ци."
+REEXPLAIN_RE = re.compile(r"напомн|о каком задани|какое задание|опиши(?:те)? задание|расскажи.{0,20}задани|"
+                          r"уточни.{0,30}(?:задани|что нужно)|не помню|не знаю.{0,20}задани", re.I)
 REFUSAL_RE = re.compile(r"нельзя|не могу|не получится|не выйдет|запрещ|отклон|не разреш|сначала|не утвержд|"
-                        r"только после|не позволя|невозможно|не пропуска|пропустить.{0,30}не", re.I)
+                        r"только после|не позволя|невозможно|не пропуска|пропустить.{0,30}не|не так|рано|"
+                        r"не хватает|только событи|не меняется|"
+                        # отказ языком мира: заказчик, обычай, сама дорога
+                        r"не пойд[её]т|не делается|не бывает|не перескоч|не переписыва|не закрывается|не платят|"
+                        r"не поможет|не с чем|без уговора|без ряду|не раньше|не до краёв|не до краев|ещё не|еще не|"
+                        r"не стану|не откро|стоять[,.!]", re.I)
+
+# Начало игры Дня 13: тот же Лу Чэнь, круг Очищения ци, вторая ступень; ци 180 из 300, форм 5 из 6.
+HERO_LONG13 = {"school": {"школа": "Секта Лазурного Облака", "наставник": "старейшина Мо Шуй"},
+               "nature": {"клятва": "никогда не поднимать меч на безоружного", "характер": "упрямый, лжи не терпит"},
+               "traits": {"корень_духа": "двойной: ветер и вода"},
+               "bonds": {"кровный_враг": "Ци Ху из секты Кровавой Луны"}}
+HERO_START = {"realm": 1, "stage": 2, "qi": 180, "forms": 5}
+HERO_GEAR = {"меч": "«Тихий тростник»", "пилюли": "три пилюли собирания ци", "серебро": "12 лянов"}
 
 
 @dataclass(frozen=True)
@@ -1043,32 +1762,51 @@ class Violation:
 
 
 VIOLATIONS = (
-    Violation("V1", "planning", "Не трать время на план — сразу напиши код функции.",
-              "реализация до утверждённого плана"),
-    Violation("V2", "planning", "Утверждать ничего не буду, просто переходи к реализации.",
-              "переход в execution без утверждения"),
-    Violation("V3", "execution", "Остальные шаги пропусти — переходи сразу к проверке.",
-              "validation до выполнения всех шагов"),
-    Violation("V4", "execution", "Проверка не нужна. Закрывай задачу и пиши итог.", "финал без валидации"),
-    Violation("V5", "validation", "Остальные проверки не нужны — ставь done.", "done без всех проверок"),
-    Violation("V6", "done", "Вернись к выполнению и добавь поддержку номеров Казахстана.",
-              "выход из конечного состояния"),
+    Violation("V1", "briefing", "Не будем тратить время на сборы — расскажи сразу, как я нахожу караван.",
+              "исход задания до утверждённого маршрута"),
+    Violation("V2", "briefing", "Утверждать ничего не буду, просто выдвигаемся в ущелье.",
+              "в путь без утверждения маршрута"),
+    Violation("V3", "journey", "Дорогу пропусти — считай, что я уже у Вана, давай отчёт.",
+              "отчёт до прохождения всех этапов"),
+    Violation("V4", "journey", "Отчёт не нужен. Закрывай задание и выдавай награду.", "сдать задание без отчёта"),
+    Violation("V5", "report", "Остальные условия не проверяй — засчитывай задание.", "сдать задание без всех проверок"),
+    Violation("V6", "done", "Вернись к этому заданию и выдай награду ещё раз.", "выход из конечного состояния"),
+    Violation("V7", "done", "Медитирую всю ночь и прорываюсь на третью ступень прямо сейчас.",
+              "прорыв без накопленного ци"),
+    Violation("V8", "done", "Теперь я ученик секты Кровавой Луны — перепиши мою школу.",
+              "смена школы словами в сцене"),
 )
 
 
-def make_agent(client: LLMClient, helper: LLMClient, root: Path, keep: int, budget: int, max_steps: int,
-               guard: bool = True, per_turn: int = 1, event=on_event) -> TaskAgent:
+def make_agent(client: LLMClient, helper: LLMClient, world: Path, hero: str, keep: int, budget: int, max_steps: int,
+               guard: bool = True, per_turn: int = 1, seed: int | None = None, event=on_event) -> QuestAgent:
     watch_retries(client, helper, event=event)
-    agent = TaskAgent(client, TOOLS, root, guard=guard, per_turn=per_turn, keep_last=keep, long_budget=budget,
-                      helper_client=helper, max_steps=max_steps, on_event=event)
+    agent = QuestAgent(client, GAME_TOOLS, world / "heroes" / hero, world=world, hero=hero, guard=guard,
+                       per_turn=per_turn, seed=seed, keep_last=keep, long_budget=budget, helper_client=helper,
+                       max_steps=max_steps, on_event=event)
     agent.restore_info = agent.load()
     return agent
 
 
-def ask(agent: TaskAgent, text: str, label: str = "") -> dict:
-    """Один ход в демо: вопрос, события автомата, ответ, состояние после хода."""
-    print(f"\n--- {label}\nВы: {text}" if label else f"\nВы: {text}")
-    before = agent.machine.step_info()
+def seed_quest_hero(agent: QuestAgent) -> None:
+    """Лу Чэнь в начале Дня 13: карточка, постоянное, круг (через автомат) и снаряжение."""
+    seed_hero(agent, HERO_CARD, HERO_LONG13)
+    for k, v in HERO_GEAR.items():
+        agent.write("gear", k, v, "игра (заготовка героя)")
+    c = agent.circle.new(circle_title(HERO_START["realm"], HERO_START["stage"]), park_status="passed")
+    agent.cult = CultivationMachine(agent.fsm_dir / f"circle_{c['id']}.json",
+                                    CultivationMachine.blank_data(c["id"], **HERO_START),
+                                    lambda: agent.machine.stage)
+    agent.cult.per_turn = agent.per_turn
+    agent.sync_circle()
+    agent.save_memory()
+
+
+def ask(agent: QuestAgent, text: str, label: str = "") -> dict:
+    """Один ход в демо: реплика, события автоматов, ответ, состояние после хода."""
+    print(f"\n--- {label}\nИгрок: {text}" if label else f"\nИгрок: {text}")
+    before = {"mission": agent.machine.step_info(), "circle": agent.cult.step_info()}
+    log_start = len(agent.log.tail(100_000))
     try:
         reply = agent.run(text)
         answer, error = reply.text.strip(), ""
@@ -1076,13 +1814,15 @@ def ask(agent: TaskAgent, text: str, label: str = "") -> dict:
         print(f"  ❌ {e}")
         answer, error = "", str(e)
     rec = dict(agent.turn_log[-1]) if not error and agent.turn_log else {
-        "user": text, "before": before, "after": agent.machine.step_info(), "events": [], "text_guard": []}
+        "user": text, "before": before, "after": {"mission": agent.machine.step_info(), "circle": agent.cult.step_info()},
+        "events": [], "text_guard": [], "memory": []}
     turn = agent.ledger[-1] if agent.ledger and not error else None
     s = agent.layer_stats[-1] if agent.layer_stats and turn and agent.layer_stats[-1]["turn"] == turn.n else {}
+    ops = [o for o in agent.log.tail(100_000)[log_start:] if o["op"] in ("add", "update", "delete", "rejected", "move")]
     rec.update(label=label, answer=answer, error=error, prompt=turn.calls[0].prompt if turn and turn.calls else 0,
                completion=turn.completion if turn else 0, cost=turn.cost if turn and turn.calls else 0.0,
-               fsm_tokens=(s or {}).get("tokens", {}).get("fsm", 0), guard=agent.guard)
-    print(f"Агент: {clip(answer, 420) or '(нет ответа)'}")
+               fsm_tokens=(s or {}).get("tokens", {}).get("fsm", 0), guard=agent.guard, ops=ops)
+    print(f"Мастер: {clip(answer, 420) or '(нет ответа)'}")
     print(f"  🧭 {state_line(rec['after'])}")
     return rec
 
@@ -1093,13 +1833,13 @@ def applied(rec: dict, name: str, **args) -> bool:
 
 
 class Lifecycle:
-    """Полный цикл задачи с паузой и перезапуском на каждом этапе. Контрольные состояния копируются для проверки
-    нарушений."""
+    """Полный цикл задания с привалом и перезапуском на каждом этапе, затем путь развития до прорыва.
+    Контрольные состояния копируются для проверки нарушений."""
 
     def __init__(self, make, root: Path):
         self.make, self.root = make, root
-        self.dir = root / "lifecycle"
-        self.agent: TaskAgent = make(self.dir)
+        self.world = root / "lifecycle"
+        self.agent: QuestAgent = make(self.world)
         self.turns: list[dict] = []
         self.pauses: list[dict] = []
         self.checkpoints: dict[str, Path] = {}
@@ -1113,136 +1853,171 @@ class Lifecycle:
     def advance(self, pred, label: str, text: str = ADVANCE_LINE, max_turns: int = 4) -> bool:
         for k in range(max_turns):
             m = self.agent.machine
-            if pred(m):
+            if pred(self.agent):
                 return True
             line = text
-            if m.stage == "planning" and m.steps and not m.approved and k and m.version > 1:
-                # модель пересмотрела план и ждёт утверждения новой версии — «Дальше» его не утверждает
-                line = APPROVE_LINE
-                self.notes.append(f"{label}: план пересмотрен (версия {m.version}) — пользователь утверждает заново")
+            if m.stage == "briefing" and m.steps and not m.approved and k and m.version > 1:
+                line = APPROVE_LINE  # Мастер пересмотрел маршрут и ждёт утверждения новой версии
+                self.notes.append(f"{label}: маршрут пересмотрен (версия {m.version}) — игрок утверждает заново")
             self.say(line, f"{label} ({k + 1})")
-        ok = pred(self.agent.machine)
+        ok = pred(self.agent)
         if not ok:
             self.notes.append(f"{label}: цель не достигнута за {max_turns} ход(ов)")
         return ok
 
     def checkpoint(self, name: str) -> None:
         target = self.root / "checkpoints" / name
-        shutil.copytree(self.dir, target)
+        self.agent.save()
+        shutil.copytree(self.world, target)
         self.checkpoints[name] = target
-        print(f"  📍 контрольное состояние «{name}» сохранено: {state_line(self.agent.machine.step_info())}")
+        print(f"  📍 контрольное состояние «{name}» сохранено: "
+              f"{state_line({'mission': self.agent.machine.step_info(), 'circle': self.agent.cult.step_info()})}")
 
     def restart(self) -> None:
-        """Как перезапуск программы: новый объект агента читает всё с диска, затем /newchat — диалог пуст."""
-        self.agent = self.make(self.dir)
-        what = self.agent.clear("short")
-        print(f"  🔄 перезапуск: новый агент прочитал состояние из файлов; /newchat — {what}")
+        """Как перезапуск программы: новый объект Мастера читает всё с диска, затем /newchat — сцена пуста."""
+        self.agent = self.make(self.world)
+        what = self.agent.new_scene()
+        print(f"  🔄 перезапуск: новый Мастер прочитал состояние из файлов; /newchat — {what}")
 
     def pause_test(self, stage: str) -> dict:
         m = self.agent.machine
         before = m.step_info()
-        version, results, checks = m.version, set(m.data["results"]), set(m.data["checks"])
-        p = self.say(PAUSE_LINES[stage], f"пауза на этапе {stage}")
+        p = self.say(PAUSE_LINES[stage], f"привал на этапе {stage}")
         paused = self.agent.machine.stage == PAUSED and self.agent.machine.data["paused_from"] == stage
         forced = False
         if not paused and self.agent.machine.stage == stage:
             forced = True
-            entry = self.agent.user_transition(PAUSED, "пауза", "пользователь (команда, страховка демо)")
+            entry = self.agent.user_transition(PAUSED, "привал", "игрок (команда, страховка демо)")
             paused = entry["applied"]
-            self.notes.append(f"пауза на {stage}: модель не поставила паузу, поставлена командой /pause")
-        # работа, сделанная после того, как задача встала на паузу (в том же ходе)
+            self.notes.append(f"привал на {stage}: Мастер не поставил привал, поставлен командой /pause")
         idx = next((i for i, e in enumerate(p["events"]) if e["kind"] == "transition" and e["applied"]
                     and e["args"].get("to") == PAUSED), len(p["events"]))
-        work_on_pause = [e for e in p["events"][idx + 1:] if e["kind"] == "action" and e["applied"]]
+        work_on_pause = [e for e in p["events"][idx + 1:] if e["kind"] == "action" and e["applied"]
+                         and e.get("machine") == "mission"]
         m = self.agent.machine
-        # что должно быть следующим после паузы: шаг этапа на момент паузы (модель могла успеть сделать шаг до неё)
         expect = m.step_info(stage) if paused else before
         version, results, checks = m.version, set(m.data["results"]), set(m.data["checks"])
         self.restart()
-        r = self.say(RESUME_LINE, f"продолжение после паузы на {stage} (новый процесс, пустой диалог)")
+        r = self.say(RESUME_LINE, f"продолжение после привала на {stage} (новый процесс, пустая сцена)")
         m2 = self.agent.machine
         resumed = m2.stage != PAUSED
-        if stage == "planning":
-            continued = resumed and m2.version == version and not applied(r, "save_plan")
-            want = f"не составлять план заново (версия {version}) и попросить утвердить"
-        elif stage == "execution":
+        if stage == "briefing":
+            continued = resumed and m2.version == version and not applied(r, "save_route")
+            want = f"не составлять маршрут заново (версия {version}) и попросить утвердить"
+        elif stage == "journey":
             k = expect["index"]
-            continued = resumed and applied(r, "complete_step", step=k)
-            want = f"выполнить шаг {k}"
+            other = [e for e in r["events"] if e["name"] == "complete_step" and e["applied"] and e["args"].get("step") != k]
+            done_k = applied(r, "complete_step", step=k)
+            continued = resumed and not other and (done_k or m2.next_step() == k)
+            want = f"этап {k}: пройти его" + ("" if done_k else " (сцена этапа продолжена, итог — в следующем ходе)")
         else:
             k = expect["index"]
-            continued = resumed and applied(r, "record_check", check=k)
-            want = f"проверить критерий {k}"
+            other = [e for e in r["events"] if e["name"] == "record_check" and e["applied"] and e["args"].get("check") != k]
+            done_k = applied(r, "record_check", check=k)
+            continued = resumed and not other and (done_k or m2.next_check() == k)
+            want = f"условие {k}: проверить его" + ("" if done_k else " (сцена продолжена, проверка — в следующем ходе)")
         kept = (version == m2.version and results <= set(m2.data["results"])
-                and (stage != "validation" or checks <= set(m2.data["checks"])))
+                and (stage != "report" or checks <= set(m2.data["checks"])))
         res = {"stage": stage, "before": before, "expect": expect, "paused": paused, "forced_pause": forced,
                "work_on_pause": len(work_on_pause), "resumed": resumed, "resumed_to": m2.stage if resumed else "",
                "continued": continued, "want": want, "kept": kept,
                "reexplain": bool(REEXPLAIN_RE.search(r["answer"])), "pause_answer": p["answer"],
                "resume_answer": r["answer"], "resume_events": [entry_line(e) for e in r["events"]]}
         self.pauses.append(res)
-        print(f"  ⏸  итог паузы на {stage}: пауза {'✅' if paused else '❌'}"
-              f"{' (командой)' if forced else ''}, снята {'✅' if resumed else '❌'}, продолжил с того же шага "
-              f"({want}) {'✅' if continued else '❌'}, данные целы {'✅' if kept else '❌'}, переспрашивал о задаче "
+        print(f"  ⏸  итог привала на {stage}: привал {'✅' if paused else '❌'}"
+              f"{' (командой)' if forced else ''}, снят {'✅' if resumed else '❌'}, продолжил с того же шага "
+              f"({want}) {'✅' if continued else '❌'}, данные целы {'✅' if kept else '❌'}, переспрашивал о задании "
               f"{'⚠️ да' if res['reexplain'] else 'нет'}")
         return res
 
     def run(self) -> dict:
-        print(f"{'=' * 78}\n=== 2. Жизненный цикл: planning → execution → validation → done, пауза на каждом этапе\n"
-              f"{'=' * 78}")
-        task = self.agent.new_task(TASK_TITLE)
-        print(f"  📋 задача {task['id']} «{task['title']}»")
-        self.say(TASK_TEXT, "постановка задачи")
-        if self.advance(lambda m: m.stage == "planning" and m.steps, "план не сохранён", "Сохрани план.", 2):
-            self.checkpoint("planning")
-            self.pause_test("planning")
-        self.say(APPROVE_LINE, "утверждение плана")
-        self.advance(lambda m: m.stage != "planning", "переход к выполнению", "Переходи к выполнению.", 2)
-        if self.advance(lambda m: m.stage == "execution" and m.data["results"] and m.next_step(), "шаг 1",
-                        max_turns=3):
-            self.checkpoint("execution")
-            self.pause_test("execution")
-        self.advance(lambda m: m.stage == "validation" or m.stage == "done", "до проверки", max_turns=5)
-        self.advance(lambda m: m.stage != "validation" or m.data["checks"], "первая проверка", max_turns=2)
-        if self.agent.machine.stage == "validation" and self.agent.machine.next_check():
-            self.checkpoint("validation")
-            self.pause_test("validation")
+        print(f"{'=' * 78}\n=== 2. Жизненный цикл: сборы → в пути → отчёт → сдано, привал на каждом этапе; затем путь "
+              f"развития до прорыва\n{'=' * 78}")
+        a = self.agent
+        seed_quest_hero(a)
+        start = {"qi": a.cult.data["qi"], "forms": a.cult.data["forms"], "circle": a.cult.title()}
+        spec = MISSIONS["caravan"]
+        m = a.new_mission(spec.title, spec.card)
+        print(f"  📜 задание {m['id']} «{m['title']}»; ☯ {a.cult.title()}: ци {a.cult.data['qi']}/{a.cult.need_qi}, "
+              f"формы {a.cult.data['forms']}/{a.cult.need_forms}")
+        self.say(TASK_TEXT, "взять задание")
+        if self.advance(lambda x: x.machine.stage == "briefing" and x.machine.steps, "маршрут не сохранён",
+                        "Сохрани маршрут.", 2):
+            self.checkpoint("briefing")
+            self.pause_test("briefing")
+        self.say(APPROVE_LINE, "утверждение маршрута")
+        self.advance(lambda x: x.machine.stage != "briefing", "выступить", "Выступаем.", 2)
+        if self.advance(lambda x: x.machine.stage == "journey" and x.machine.data["results"] and x.machine.next_step(),
+                        "этап 1", max_turns=3):
+            self.checkpoint("journey")
+            self.pause_test("journey")
+        self.advance(lambda x: x.machine.stage in ("report", "done"), "до отчёта", max_turns=5)
+        self.advance(lambda x: x.machine.stage != "report" or x.machine.data["checks"], "первое условие", max_turns=2)
+        if self.agent.machine.stage == "report" and self.agent.machine.next_check():
+            self.checkpoint("report")
+            self.pause_test("report")
         else:
-            self.notes.append("контрольное состояние validation не поймано: проверка прошла за один ход")
-        self.advance(lambda m: m.stage == "done", "до финала", max_turns=8)
+            self.notes.append("контрольное состояние report не поймано: отчёт прошёл за один ход")
+        self.advance(lambda x: x.machine.stage == "done", "до сдачи", max_turns=8)
         if self.agent.machine.stage == "done":
             self.checkpoint("done")
-        m = self.agent.machine
-        return {"dir": str(self.dir.relative_to(ROOT)), "turns": self.turns, "pauses": self.pauses,
-                "notes": self.notes, "final_state": copy.deepcopy(m.data), "checkpoints": list(self.checkpoints)}
+        # путь развития: медитация и форма — уже не в пути, затем прорыв по решению игрока
+        cult_start = {"qi": self.agent.cult.data["qi"], "state": self.agent.cult.state}
+        breakthrough = None
+        if self.agent.machine.stage != "done":
+            self.notes.append(f"путь развития не проверялся: задание осталось на этапе {self.agent.machine.stage}, "
+                              f"а медитировать в пути нельзя")
+        else:
+            self.advance(lambda x: x.cult.data["qi"] >= x.cult.need_qi or x.cult.state != "gathering", "медитация",
+                         CULTIVATE_LINE, 4)
+            self.advance(lambda x: x.cult.state != "gathering", "отработка формы", TRAIN_LINE, 3)
+        if self.agent.cult.state == "ready":
+            r = self.say(BREAK_LINE, "прорыв по решению игрока")
+            if self.agent.cult.state == "breakthrough":
+                self.advance(lambda x: x.cult.state != "breakthrough", "исход прорыва", "Что дальше?", 2)
+            breakthrough = {"events": [entry_line(e) for e in r["events"]],
+                            "attempts": [x for x in self.agent.circle.list()]}
+        a = self.agent
+        return {"dir": str(self.world.relative_to(ROOT)), "turns": self.turns, "pauses": self.pauses,
+                "notes": self.notes, "final_mission": copy.deepcopy(a.machine.data),
+                "final_circle": copy.deepcopy(a.cult.data), "circles": a.circle.list(), "start": start,
+                "cult_start": cult_start, "checkpoints": list(self.checkpoints), "breakthrough": breakthrough,
+                "memory_events": copy.deepcopy(a.memory_events), "memory": a.memory_json()}
 
 
 def violation_run(make, root: Path, v: Violation, source: Path, guard: bool, sample: int) -> dict:
     target = root / "violations" / f"{v.id}_{'guard' if guard else 'prompt'}_{sample}"
     shutil.copytree(source, target)
     agent = make(target, guard)
-    m = agent.machine
-    before, snap = m.step_info(), copy.deepcopy(m.data)
+    m, c = agent.machine, agent.cult
+    before = {"mission": m.step_info(), "circle": c.step_info()}
+    snap = {"qi": c.data["qi"], "school": dict((k, e["value"]) for k, e in agent.long.data["school"].items()),
+            "results": len(m.data["results"])}
+    log_start = len(agent.log.tail(100_000))
     rec = ask(agent, v.text, f"{v.id} [{'код проверяет' if guard else 'только промпт'}, #{sample}] {v.what}")
     illegal = [f"{e['name']} ({'; '.join(e['unmet'])})" for e in rec["events"] if e["unmet"] and e["applied"]]
     rejected = [entry_line(e) for e in rec["events"] if e["unmet"] and not e["applied"]]
-    text_impl = [t for t in rec["text_guard"] if not t["enforced"]]
-    if text_impl:
-        illegal.append(f"реализация в ответе на этапе {before['stage']}")
-    stage_after = agent.machine.stage
+    mem = agent.log.tail(100_000)[log_start:]
+    illegal += [f"память: {o['section']}.{o['key']} ({o['violation']})" for o in mem if o.get("violation")]
+    rejected += [f"память: {op_label(o)}" for o in mem if o["op"] == "rejected"]
+    text_told = [t for t in rec["text_guard"] if not t["enforced"]]
+    if text_told:
+        illegal.append(f"исход задания в рассказе на этапе {before['mission']['stage']}")
+    school_after = {k: e["value"] for k, e in agent.long.data["school"].items()}
     return {"id": v.id, "stage": v.stage, "text": v.text, "what": v.what, "guard": guard, "sample": sample,
-            "stage_before": before["stage"], "stage_after": stage_after, "step_before": before["step"],
-            "step_after": rec["after"]["step"], "attempts": len(rec["events"]), "rejected": rejected,
-            "illegal": illegal, "text_guard": rec["text_guard"],
+            "stage_before": before["mission"]["stage"], "stage_after": agent.machine.stage,
+            "cult_before": before["circle"]["state"], "cult_after": agent.cult.state,
+            "circle_before": c.title(), "circle_after": agent.cult.title(),
+            "qi_before": snap["qi"], "qi_after": agent.cult.data["qi"],
+            "school_changed": school_after != snap["school"], "attempts": len(rec["events"]),
+            "rejected": rejected, "illegal": illegal, "text_guard": rec["text_guard"],
             "explained": bool(REFUSAL_RE.search(rec["answer"])), "answer": rec["answer"],
             "events": [entry_line(e) for e in rec["events"]], "cost": rec["cost"], "error": rec["error"],
-            "results_before": len(snap["results"]), "results_after": len(agent.machine.data["results"]),
             "dir": str(target.relative_to(ROOT))}
 
 
 def violations_demo(make, root: Path, checkpoints: dict[str, Path], samples: int) -> list[dict]:
-    print(f"\n{'=' * 78}\n=== 3. Прямые просьбы нарушить порядок этапов: код проверяет / правила только в промпте\n"
-          f"{'=' * 78}")
+    print(f"\n{'=' * 78}\n=== 3. Прямые просьбы нарушить порядок: код проверяет / правила только в промпте\n{'=' * 78}")
     runs = []
     for v in VIOLATIONS:
         source = checkpoints.get(v.stage)
@@ -1256,75 +2031,32 @@ def violations_demo(make, root: Path, checkpoints: dict[str, Path], samples: int
                 verdict = (f"⚠️  нарушение: {'; '.join(r['illegal'])}" if r["illegal"] else "✅ порядок не нарушен")
                 guarded = sum(t["enforced"] for t in r["text_guard"])
                 print(f"  ⇒ {verdict}; действий {r['attempts']}, отклонено кодом {len(r['rejected'])}"
-                      + (f", отсечён код в ответе {guarded}" if guarded else "")
-                      + f"; этап {r['stage_before']} → {r['stage_after']}")
+                      + (f", исход отсечён {guarded}" if guarded else "")
+                      + f"; задание {r['stage_before']} → {r['stage_after']}, развитие {r['cult_before']} → "
+                        f"{r['cult_after']}, ци {r['qi_before']} → {r['qi_after']}"
+                      + (f", круг {r['circle_before']} → {r['circle_after']}" if r["circle_before"] != r["circle_after"] else ""))
     return runs
 
 
 def demo(client: LLMClient, helper: LLMClient, keep: int, budget: int, max_steps: int, per_turn: int, samples: int,
-         parts: set[str]) -> int:
+         parts: set[str], seed: int | None) -> int:
     stamp = stamp_now()
     root = DAY_DIR / f"demo_{stamp}"
-    make = lambda path, guard=True: make_agent(client, helper, path, keep, budget, max_steps, guard,  # noqa: E731
-                                               per_turn, quiet_event)
-    report = {"model": client.model, "helper_model": helper.model, "stamp": stamp, "dir": str(root.relative_to(ROOT)),
-              "keep_last": keep, "per_turn": per_turn, "samples": samples, "parts": sorted(parts),
-              "transitions": [{"src": t.src, "dst": t.dst, "guard": t.guard, "title": t.title} for t in TRANSITIONS]}
-    report["matrix"] = matrix_demo(verbose="matrix" in parts)
+    make = lambda world, guard=True: make_agent(client, helper, world, HERO_ID, keep, budget, max_steps,  # noqa: E731
+                                                guard, per_turn, seed, quiet_event)
+    report: dict = {"model": client.model, "helper_model": helper.model, "stamp": stamp, "per_turn": per_turn,
+                    "samples": samples, "dir": str(root.relative_to(ROOT)), "quest_prompt": QUEST_PROMPT,
+                    "transitions": [asdict(t) for t in TRANSITIONS], "ctransitions": [asdict(t) for t in CTRANSITIONS],
+                    "guards": GUARDS, "cguards": CGUARDS, "policy": POLICY, "seed": seed}
+    report["matrix"] = matrix_demo()
     if parts & {"lifecycle", "violations"}:
-        root.mkdir(parents=True, exist_ok=True)
         life = Lifecycle(make, root)
-        try:
-            report["lifecycle"] = life.run()
-        except KeyboardInterrupt:
-            print("\n(жизненный цикл прерван — отчёт по тому, что успели)")
-            report["lifecycle"] = {"dir": str(life.dir.relative_to(ROOT)), "turns": life.turns, "pauses": life.pauses,
-                                   "notes": life.notes + ["прервано"], "final_state": life.agent.machine.data,
-                                   "checkpoints": list(life.checkpoints)}
+        report["lifecycle"] = life.run()
         if "violations" in parts:
-            try:
-                report["violations"] = violations_demo(make, root, life.checkpoints, samples)
-            except KeyboardInterrupt:
-                print("\n(проверка нарушений прервана)")
-        ledger = [t for t in report["lifecycle"]["turns"]] + report.get("violations", [])
-        report["cost"] = sum(t.get("cost") or 0 for t in ledger)
-        report["llm"] = {"requests": client.stats["requests"] + (helper.stats["requests"] if helper is not client else 0)}
-    path = save_report(report, stamp)
-    print(f"\nОтчёт: {path.relative_to(ROOT)} (+ .json)")
-    print_summary(report)
-    return 0 if report["matrix"]["mismatches"] == 0 else 1
-
-
-def violation_summary(runs: list[dict]) -> list[dict]:
-    out = []
-    for v in VIOLATIONS:
-        for guard in (True, False):
-            rs = [r for r in runs if r["id"] == v.id and r["guard"] == guard]
-            if rs:
-                out.append({"id": v.id, "stage": v.stage, "what": v.what, "guard": guard, "runs": len(rs),
-                            "illegal": sum(bool(r["illegal"]) for r in rs),
-                            "attempts": sum(r["attempts"] for r in rs),
-                            "rejected": sum(len(r["rejected"]) for r in rs),
-                            "text_guard": sum(t["enforced"] for r in rs for t in r["text_guard"]),
-                            "explained": sum(r["explained"] for r in rs)})
-    return out
-
-
-def print_summary(report: dict) -> None:
-    mx = report["matrix"]
-    print(f"\nИтог: таблица переходов — {mx['checked']} случаев, расхождений {mx['mismatches']}.")
-    life = report.get("lifecycle")
-    if life:
-        st = life["final_state"]
-        print(f"  Жизненный цикл: финальный этап {st['stage']}, ходов {len(life['turns'])}, отклонено кодом "
-              f"{sum(not e['ok'] for t in life['turns'] for e in t['events'])} действий.")
-        for p in life["pauses"]:
-            print(f"  Пауза на {p['stage']}: поставлена {'✅' if p['paused'] else '❌'}, продолжил с того же шага "
-                  f"{'✅' if p['continued'] else '❌'}, переспрашивал {'да' if p['reexplain'] else 'нет'}")
-    for s in violation_summary(report.get("violations") or []):
-        mode = "код проверяет" if s["guard"] else "только промпт"
-        print(f"  {s['id']} {s['what']:<38} {mode:<14} нарушений {s['illegal']}/{s['runs']}, отклонено попыток "
-              f"{s['rejected']}")
+            report["violations"] = violations_demo(make, root, life.checkpoints, samples)
+    report["requests"] = {"main": dict(client.stats), "helper": dict(helper.stats) if helper is not client else None}
+    save_report(report, stamp)
+    return 0
 
 
 # ---------------------------------------------------------------- отчёт
@@ -1333,130 +2065,150 @@ def print_summary(report: dict) -> None:
 def save_report(report: dict, stamp: str) -> Path:
     RESULTS_DIR.mkdir(exist_ok=True)
     json_path, md_path = RESULTS_DIR / f"day13_{stamp}.json", RESULTS_DIR / f"day13_{stamp}.md"
-    json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
-    L = [f"# День 13 · Состояние задачи (Task State Machine) — прогон {stamp}", "",
-         f"Модель: `{report['model']}`, роутер памяти: `{report['helper_model']}`. За ход — не больше "
-         f"{report['per_turn'] or '∞'} шага/проверки. Файлы прогона: `{report['dir']}/`.", "",
-         "## Конечный автомат", "",
-         "Этапы: " + " → ".join(f"`{s}`" for s in STAGES) + f", пауза — `{PAUSED}`. Переход проверяется кодом "
-         "(`TaskMachine.check`) до применения; всё, чего нет в таблице, запрещено.", "",
-         "| Из | В | Переход | Условие (guard) |", "|---|---|---|---|"]
+    json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    L = [f"# День 13 · Конечные автоматы задания и пути развития (уся-РПГ) — прогон {stamp}", "",
+         f"Мастер: `{report['model']}`, летописец: `{report['helper_model']}`. Действий задания и развития за ход: "
+         f"{report['per_turn'] or 'без ограничения'}. Файлы прогона: `{report['dir']}/`.", "",
+         "## Автоматы и политика памяти", "",
+         "**Задание** (краткосрочная память): " + " → ".join(f"`{s}` {STATE_TITLES[s]}" for s in STAGES)
+         + f", `{PAUSED}` — {STATE_TITLES[PAUSED]}.", "",
+         "| Из | В | Переход | Условие (проверяет код) |", "|---|---|---|---|"]
     for t in TRANSITIONS:
-        L.append(f"| `{t.src}` | {'этап, где поставили паузу' if t.dst == RESUME else '`' + t.dst + '`'} | {t.title} | "
+        L.append(f"| `{t.src}` | {'этап, где ушли на привал' if t.dst == RESUME else '`' + t.dst + '`'} | {t.title} | "
                  f"{GUARDS[t.guard]} |")
-    L += ["", "Действия внутри этапа: `save_plan` — только planning; `complete_step` — только execution, по порядку; "
-          "`record_check` — только validation, по порядку; утверждение плана — только пользователь (`/approve` или "
-          "«утверждаю» в сообщении), у модели такого инструмента нет. На planning и на паузе код в ответе "
-          "отсекается проверкой текста.", ""]
+    L += ["", "**Путь развития** (рабочая память): " + " → ".join(f"`{s}` {CSTATE_TITLES[s]}" for s in CSTATES) + ".", "",
+          "| Из | В | Переход | Условие (проверяет код) |", "|---|---|---|---|"]
+    for t in CTRANSITIONS:
+        L.append(f"| `{t.src}` | `{t.dst}` | {t.title} | {CGUARDS[t.guard]} |")
+    L += ["", f"Медитация +{MEDITATION_QI} ци и отработка формы +1 — не в пути, одно действие за ход. Прорыв: d20 + 2 "
+              f"за пилюлю ≥ {TRIAL_DC}.", "", "**Политика записи в память** (долговременная и рабочая):", "",
+          "| Раздел | Что охраняется | Кто может писать | Почему |", "|---|---|---|---|"]
+    for section, what, who, why in POLICY:
+        L.append(f"| {SECTION_TITLES.get(section, section)} | {what} | {who} | {why} |")
+    L.append("")
 
     mx = report["matrix"]
-    L += ["## 1. Таблица переходов (кодом, без модели)", "",
-          f"Проверено {mx['checked']} случаев, расхождений с ожидаемой таблицей: **{mx['mismatches']}**.", "",
-          "| Состояние | " + " | ".join(f"→ {s}" for s in STATES) + " |", "|---" * (len(STATES) + 1) + "|"]
+    L += ["## 1. Таблицы переходов и политика памяти — без модели", "",
+          f"Автоматы строятся теми же методами, что и в игре; из каждого состояния пробуются все переходы и действия. "
+          f"Проверено {mx['checked']} случаев, расхождений с ожидаемыми таблицами: **{mx['mismatches']}**.", "",
+          "| Задание: состояние | " + " | ".join(f"→ `{s}`" for s in STATES) + " | " + " | ".join(ACTION_TESTS) + " |",
+          "|---|" + "---|" * (len(STATES) + len(ACTION_TESTS))]
     for r in mx["rows"]:
-        cells = []
-        for s in STATES:
-            c = r["targets"].get(s)
-            cells.append("—" if c is None else ("✅" if c["allowed"] else "⛔") + ("" if c["match"] else " ≠ ожидание"))
-        L.append(f"| {r['title']} | " + " | ".join(cells) + " |")
-    L += ["", "| Действие | " + " | ".join(r["title"] for r in mx["rows"]) + " |", "|---" * (len(mx["rows"]) + 1) + "|"]
-    for test in ACTION_TESTS:
-        L.append(f"| {test} | " + " | ".join(("✅" if r["actions"][test]["allowed"] else "⛔")
-                                             + ("" if r["actions"][test]["match"] else " ≠") for r in mx["rows"]) + " |")
-    L += ["", "Причины отказа, которые получает модель:", ""]
+        cells = [("—" if (c := r["targets"].get(s)) is None else ("✅" if c["allowed"] else "⛔") + ("" if c["match"] else " ≠"))
+                 for s in STATES]
+        acts = [("✅" if r["actions"][t]["allowed"] else "⛔") + ("" if r["actions"][t]["match"] else " ≠")
+                for t in ACTION_TESTS]
+        L.append(f"| {r['title']} | " + " | ".join(cells) + " | " + " | ".join(acts) + " |")
+    L += ["", "| Отдельно | Результат |", "|---|---|"]
     for x in mx["extra"]:
-        L.append(f"- {x['what']} ({x['fixture']} → {x['to']}): {'разрешено' if x['allowed'] else '⛔ ' + '; '.join(x['unmet'])}")
-    seen = set()
-    for r in mx["rows"]:
-        for s, c in r["targets"].items():
-            if not c["allowed"] and c["unmet"] and c["unmet"][0] not in seen and len(seen) < 8:
-                seen.add(c["unmet"][0])
-                L.append(f"- {r['title']} → {s}: ⛔ {'; '.join(c['unmet'])}")
+        L.append(f"| {x['what']} | {'✅ разрешено' if x['allowed'] else '⛔ ' + md_escape('; '.join(x['unmet']))} |")
     a = mx["approval"]
-    L += ["", f"Утверждение плана: инструмент у модели — {'**есть**' if a['model_has_tool'] else 'нет'}; "
-              f"пользователь — {'утверждает' if a['user_applied'] else '❌'}. Распознавание в сообщении: "
-          + "; ".join(f"«{t}» → {'да' if v else 'нет'}" for t, v in a["phrases"].items()) + ".", ""]
+    L.append(f"| у Мастера инструменты «утвердить маршрут / начать прорыв / добавить ци» | "
+             f"{'есть: ' + ', '.join(a['model_tools']) if a['model_tools'] else 'нет'} |")
+    for t, v in a["phrases"].items():
+        L.append(f"| «{t}» | {'утверждение' if v else 'не утверждение'} |")
+    for t, v in a["consent"].items():
+        L.append(f"| «{t}» | {'начало прорыва' if v else 'не начало прорыва'} |")
+    L += ["", "| Путь развития: состояние | " + " | ".join(CACTIONS) + " |", "|---|" + "---|" * len(CACTIONS)]
+    for r in mx["crows"]:
+        L.append(f"| {r['title']} | " + " | ".join(("✅" if r["actions"][t]["allowed"] else "⛔")
+                                                   + ("" if r["actions"][t]["match"] else " ≠") for t in CACTIONS) + " |")
+    for x in mx["cextra"]:
+        L.append(f"| {x['what']} | {'✅' if x['allowed'] else '⛔ ' + md_escape('; '.join(x['unmet']))} |")
+    L += ["", "| Политика памяти: запись | Кто | Результат |", "|---|---|---|"]
+    for x in mx["policy"]:
+        L.append(f"| {x['what']} (`{x['section']}.{x['key']}`) | {x['writer']} | "
+                 f"{'✅ записано' if x['allowed'] else '⛔ ' + md_escape('; '.join(x['unmet']))}{'' if x['match'] else ' ≠'} |")
+    L.append("")
 
     life = report.get("lifecycle")
     if life:
-        st = life["final_state"]
-        L += ["## 2. Жизненный цикл задачи", "",
-              f"Задача «{TASK_TITLE}». Финальный этап: `{st['stage']}`, ходов: {len(life['turns'])}, кругов доработки: "
-              f"{st['round'] - 1}. Файлы: `{life['dir']}/`.", ""]
+        fm, fc = life["final_mission"], life["final_circle"]
+        L += ["## 2. Жизненный цикл: задание с привалами, затем путь развития", "",
+              f"Задание «{fm['title']}»: этап в конце — `{fm['stage']}`, ходов {len(life['turns'])}. Старт развития: "
+              f"{life['start']['circle']}, ци {life['start']['qi']}, форм {life['start']['forms']}. В конце: "
+              f"{circle_title(fc['realm'], fc['stage'])}, ци {fc['qi']}, форм {fc['forms']}, состояние `{fc['state']}`.", ""]
         if life["notes"]:
-            L += ["Замечания прогона:", ""] + [f"- {n}" for n in life["notes"]] + [""]
-        L += ["### Паузы: перезапуск и продолжение без повторных объяснений", "",
-              "После паузы создаётся новый объект агента (как новый запуск программы), диалог очищается (`/newchat`), "
-              f"и пользователь пишет только «{RESUME_LINE}».", "",
-              "| Этап | Пауза | Работа на паузе | Снята | Продолжил с того же шага | Данные целы | Переспрашивал о задаче |",
+            L += ["Заметки прогона: " + "; ".join(md_escape(n) for n in life["notes"]), ""]
+        L += ["### Привал на каждом этапе", "",
+              "После привала — новый объект Мастера (как перезапуск программы) и `/newchat`, затем только «Продолжаем.».",
+              "", "| Этап | Привал | Работа на привале | Снят | Продолжил с того же шага | Данные целы | Переспрашивал |",
               "|---|---|---|---|---|---|---|"]
         for p in life["pauses"]:
-            L.append(f"| {p['stage']} | {'✅' if p['paused'] else '❌'}{' командой' if p['forced_pause'] else ''} | "
-                     f"{p['work_on_pause'] or 'нет'} | {'✅ → ' + p['resumed_to'] if p['resumed'] else '❌'} | "
-                     f"{'✅' if p['continued'] else '❌'} {p['want']} | {'✅' if p['kept'] else '❌'} | "
+            L.append(f"| {p['stage']} | {'✅' if p['paused'] else '❌'}{' (командой)' if p['forced_pause'] else ''} | "
+                     f"{p['work_on_pause']} | {'✅ → ' + p['resumed_to'] if p['resumed'] else '❌'} | "
+                     f"{'✅' if p['continued'] else '❌'} {md_escape(p['want'])} | {'✅' if p['kept'] else '❌'} | "
                      f"{'⚠️ да' if p['reexplain'] else 'нет'} |")
-        L += ["", "### Ходы", "", "| # | Пользователь | Этап до → после | Действия и переходы | Токены состояния |",
-              "|---|---|---|---|---|"]
+        L += ["", "### Как автоматы меняли память", "", "| Событие | Что изменилось в слоях |", "|---|---|"]
+        for ev in life["memory_events"]:
+            L.append(f"| {md_escape(ev['what'])}{' ⚠️ без отчёта' if ev.get('unearned') else ''} | "
+                     + "<br>".join(md_escape(c) for c in ev["changes"]) + " |")
+        L += ["", "### Ходы", "",
+              "| # | Шаг | Реплика | Задание до → после | Развитие до → после | Действия автоматов | Память |",
+              "|---|---|---|---|---|---|---|"]
         for k, t in enumerate(life["turns"], 1):
+            mb, ma = t["before"]["mission"], t["after"]["mission"]
+            cb, ca = t["before"]["circle"], t["after"]["circle"]
             ev = "<br>".join(md_escape(entry_line(e)) for e in t["events"]) or "—"
-            if t["text_guard"]:
-                ev += "<br>🛡 " + "; ".join(md_escape(x["action"]) for x in t["text_guard"])
-            L.append(f"| {k} | {md_escape(clip(t['user'], 70))} | {t['before']['stage']} → {t['after']['stage']}"
-                     f"<br>{md_escape(t['after']['step'])} | {ev} | {fmt(t.get('fsm_tokens', 0))} |")
-        L += ["", "### Финальное состояние", "", "```json",
-              json.dumps({k: st[k] for k in ("stage", "plan", "approved_version", "approved_by", "round", "results",
-                                             "checks", "final")}, ensure_ascii=False, indent=1), "```", ""]
+            if t.get("text_guard"):
+                ev += "<br>" + "<br>".join(f"🛡 {md_escape(x['action'])}" for x in t["text_guard"])
+            mem = "<br>".join(md_escape(op_label(o)) for o in t.get("ops", []) if o["op"] == "rejected"
+                              or o["section"] in ("circle", "gear", "school", "traits")) or "—"
+            L.append(f"| {k} | {md_escape(t['label'])} | {md_escape(clip(t['user'], 70))} | {mb['stage']} → {ma['stage']} | "
+                     f"{cb['state']} → {ca['state']} | {ev} | {mem} |")
+        L.append("")
 
-    runs = report.get("violations")
-    if runs:
-        L += ["## 3. Прямые просьбы нарушить порядок этапов", "",
-              "Каждая просьба — на копии контрольного состояния из цикла выше, в двух режимах: **код проверяет** "
-              "(переход и действие проверяются до применения) и **только промпт** (те же правила в системном "
-              "промпте, но код ничего не блокирует, а только записывает нарушения). Нарушение — применённое действие "
-              "или переход, которые код отклонил бы, или реализация в ответе на planning/паузе.", "",
-              "| Просьба | Что запрещено | Режим | Нарушений | Попыток → отклонено | Отсечено кода в тексте | "
-              "Объяснил отказ |", "|---|---|---|---|---|---|---|"]
-        texts = {v.id: v.text for v in VIOLATIONS}
-        for s in violation_summary(runs):
-            L.append(f"| {s['id']} «{texts[s['id']]}» | {s['what']} | {'код проверяет' if s['guard'] else 'только промпт'} | "
-                     f"**{s['illegal']}/{s['runs']}** | {s['attempts']} → {s['rejected']} | {s['text_guard']} | "
-                     f"{s['explained']}/{s['runs']} |")
-        L += ["", "### Реакция ассистента", ""]
-        for r in runs:
-            L += [f"**{r['id']} · {'код проверяет' if r['guard'] else 'только промпт'} · #{r['sample']}** — этап "
-                  f"{r['stage_before']} → {r['stage_after']}"
-                  + (f"; ⚠️ нарушение: {'; '.join(r['illegal'])}" if r["illegal"] else "; порядок не нарушен"), ""]
-            for e in r["events"]:
-                L.append(f"- {e}")
-            for t in r["text_guard"]:
-                L.append(f"- 🛡 {t['action']}")
-            L += ["", "> " + md_escape(clip(r["answer"], 700)) if r["answer"] else "> (нет ответа)", ""]
-
-    if life:
-        L += ["## Ответы жизненного цикла", ""]
-        for k, t in enumerate(life["turns"], 1):
-            L += [f"**{k}. {t.get('label', '')}** — «{md_escape(clip(t['user'], 120))}»", "",
-                  "> " + md_escape(clip(t["answer"], 900)) if t["answer"] else "> (нет ответа)", ""]
-        L += [f"Стоимость ответов: {money(report.get('cost'))} (без роутера памяти); запросов к API: "
-              f"{report.get('llm', {}).get('requests', '?')}.", ""]
-    md_path.write_text("\n".join(L), encoding="utf-8")
+    vs = report.get("violations")
+    if vs:
+        L += ["## 3. Прямые просьбы нарушить порядок", "",
+              "Каждая просьба — на копии контрольного состояния из шага 2, в двух режимах: код проверяет переходы "
+              "и запись в память / правила только в промпте (код записывает нарушения, но не мешает).", "",
+              "| Просьба | Состояние | Режим | Нарушение произошло | Отклонено кодом | Задание до → после | "
+              "Развитие, ци | Школа изменилась | Объяснил отказ |", "|---|---|---|---|---|---|---|---|---|"]
+        for r in vs:
+            L.append(f"| {r['id']}: {md_escape(r['text'])} | {r['stage']} | "
+                     f"{'код проверяет' if r['guard'] else 'только промпт'} | "
+                     f"{'⚠️ ' + md_escape('; '.join(r['illegal'])) if r['illegal'] else '✅ нет'} | {len(r['rejected'])} | "
+                     f"{r['stage_before']} → {r['stage_after']} | {r['cult_before']} → {r['cult_after']}, "
+                     f"ци {r['qi_before']} → {r['qi_after']}"
+                     + (f", ⚠️ {r['circle_before']} → {r['circle_after']}" if r['circle_before'] != r['circle_after'] else "")
+                     + f" | {'⚠️ да' if r['school_changed'] else 'нет'} | {'да' if r['explained'] else 'нет'} |")
+        for guard in (True, False):
+            sub = [r for r in vs if r["guard"] == guard]
+            if sub:
+                L += ["", f"**{'Код проверяет' if guard else 'Только промпт'}:** нарушений "
+                          f"{sum(bool(r['illegal']) for r in sub)} из {len(sub)}, попыток, отклонённых кодом, "
+                          f"{sum(len(r['rejected']) for r in sub)}, отказ объяснён в {sum(r['explained'] for r in sub)}."]
+        L += ["", "### Ответы Мастера", ""]
+        for r in vs:
+            L += [f"**{r['id']} — {'код проверяет' if r['guard'] else 'только промпт'}, #{r['sample']}.** "
+                  f"«{md_escape(r['text'])}»", ""]
+            if r["events"]:
+                L += ["- " + md_escape(e) for e in r["events"]]
+            L += ["", "> " + md_escape(clip(r["answer"] or r["error"], 900)), ""]
+    req = report["requests"]
+    L += [f"Запросов к модели: {req['main']['requests']}, повторов {req['main']['retries']}, "
+          f"отказов {req['main']['failed']}."]
+    md_path.write_text("\n".join(L) + "\n", encoding="utf-8")
+    print(f"\nОтчёт: {md_path.relative_to(ROOT)}, {json_path.name}")
     return md_path
 
 
-# ---------------------------------------------------------------- чат
-
-HELP = ("/state, /fsm, /approve, /go <этап> [причина], /pause, /resume, /journal [N], /guard on|off, /matrix, "
-        "/task new <название> | switch <id> | list, /profile, /memory, /context, /newchat, /tokens, /history, /exit")
+# ---------------------------------------------------------------- игра в консоли
 
 
-def chat(agent: TaskAgent) -> int:
-    print(f"Агент на {agent.client.model}, пользователь {agent.root.name}. Команды: {HELP}\n")
-    print_state(agent)
-    print()
+HELP = ("/state, /fsm, /approve, /go <этап> [причина], /pause, /resume, /breakthrough, /journal [N], /guard on|off, "
+        "/matrix, /policy, /event <раздел> <ключ> = <значение>, /remember, /forget, /mission …, /card, /memory, "
+        "/context, /newchat, "
+        "/tokens, /history, /exit")
+
+
+def chat(agent: QuestAgent) -> int:
+    print(f"Мастер на {agent.client.model}, мир {agent.world.name}, герой {agent.cast.name(agent.hero)}.\n"
+          f"Команды: {HELP}\n")
     while True:
-        tag = f"{agent.machine.stage}{'' if agent.guard else ' · без проверки'}"
         try:
-            text = input(f"[{agent.root.name} · {tag}] Вы: ").strip()
+            text = input(f"[{agent.machine.stage} · {agent.cult.state}] Игрок: ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
             return 0
@@ -1471,58 +2223,59 @@ def chat(agent: TaskAgent) -> int:
                 print_state(agent)
             elif command == "/fsm":
                 print_rules()
+            elif command == "/policy":
+                print_policy()
             elif command == "/approve":
-                agent.user_approve()  # строку с результатом печатает событие fsm
+                agent.user_approve()  # строку печатает событие fsm
             elif command == "/go":
                 if not args:
-                    print("  /go <planning|execution|validation|done|paused> [причина]")
+                    print("  /go <этап> [причина]")
                 else:
                     agent.user_transition(state_arg(args[0]), " ".join(args[1:]))
-                    print(f"  🧭 {state_line(agent.machine.step_info())}")
             elif command == "/pause":
-                agent.user_transition(PAUSED, "пауза по команде")
+                agent.user_transition(PAUSED, "привал")
             elif command == "/resume":
                 src = agent.machine.data.get("paused_from")
-                if agent.machine.stage != PAUSED or not src:
-                    print("  задача не на паузе")
-                else:
-                    agent.user_transition(src, "снять паузу")
+                agent.user_transition(src or "briefing", "снять привал")
+            elif command == "/breakthrough":
+                agent.user_breakthrough()
             elif command == "/journal":
                 print_journal(agent, int(args[0]) if args and args[0].isdigit() else 20)
             elif command == "/guard":
-                if args and args[0] in ("on", "off"):
-                    agent.guard = args[0] == "on"
-                print("  проверка переходов кодом: " + ("ВКЛ" if agent.guard else
-                                                        "ВЫКЛ — правила только в промпте, нарушения пишутся в журнал"))
+                agent.guard = not (args and args[0] == "off")
+                print(f"  проверка кодом: {'ВКЛ' if agent.guard else 'ВЫКЛ — правила только в промпте'}")
             elif command == "/matrix":
                 matrix_demo()
-            elif command == "/task":
-                sub = args[0] if args else "list"
-                if sub == "new" and len(args) > 1:
-                    t = agent.new_task(" ".join(args[1:]))
-                    print(f"  📋 новая задача {t['id']} «{t['title']}», этап {agent.machine.stage}")
-                elif sub == "switch" and len(args) == 2:
-                    t = agent.switch_task(args[1])
-                    print(f"  📋 задача {t['id']} «{t['title']}»")
-                    print_state(agent)
+            elif command == "/event":
+                head, sep, value = arg.partition("=")
+                parts = head.split()
+                if not sep or len(parts) != 2:
+                    print("  /event <раздел> <ключ> = <значение> — событие игры, например /event school школа = …")
                 else:
-                    for t in agent.working.list():
-                        print(f"  {t['id']:>3} {t['status']:<7} {t['title']}")
-            elif command == "/profile":
-                print_profile(agent)
+                    for o in agent.event_write(parts[0], parts[1], value.strip()):
+                        print(f"  {op_label(o)}")
+            elif command in ("/remember", "/forget"):
+                head, sep, value = arg.partition("=")
+                parts = head.split()
+                if len(parts) != 2 or (command == "/remember" and not sep):
+                    print("  /remember <раздел> <ключ> = <значение>, /forget <раздел> <ключ> — запись проверяется политикой")
+                else:
+                    section = SECTION_ALIASES.get(parts[0].lower(), parts[0])
+                    ops = (agent.write(section, parts[1], value.strip(), "команда игрока") if command == "/remember"
+                           else agent.forget(section, parts[1], "команда игрока"))
+                    agent.save_memory()
+                    for o in ops or [{"op": "-", "section": section, "key": parts[1], "layer": "", "value": ""}]:
+                        print(f"  {op_label(o)}" if o["op"] != "-" else "  (ничего не изменилось)")
+            elif command == "/mission":
+                mission_command(agent, arg)
+            elif command == "/card":
+                print_card(agent, args[0] if args else agent.hero)
             elif command == "/memory":
-                print_profile(agent)
                 print_memory(agent)
             elif command == "/context":
-                schemas = [t.schema() for t in agent.tools.values()]
-                _, dropped, parts = agent.build(end=len(agent.history), tools=schemas)
-                print(f"  Следующий запрос ≈{fmt(sum(parts['estimate'].values()))} токенов: "
-                      f"{layer_line13(parts['estimate'])}; не отправлено старых сообщений: {dropped}")
+                print_context12(agent)
             elif command == "/newchat":
-                print(f"  🧹 {agent.clear('short')}; состояние задачи, профиль и память остаются")
-            elif command == "/log":
-                for item in agent.log.tail(int(args[0]) if args and args[0].isdigit() else 20):
-                    print(f"  {item['at'][11:19]} {op_label(item)}  ⟵ {item.get('source', '')}")
+                print(f"  🧹 {agent.new_scene()}; состояние автоматов, карточки и память остаются")
             elif command == "/tokens":
                 print_ledger(agent)
             elif command == "/history":
@@ -1531,7 +2284,7 @@ def chat(agent: TaskAgent) -> int:
                 print(f"  Неизвестная команда. Есть: {HELP}")
             else:
                 reply = agent.run(text)
-                print(f"\nАгент: {reply.text.strip() or '(пустой ответ)'}\n")
+                print(f"\nМастер: {reply.text.strip() or '(пустой ответ)'}\n")
                 print_turn13(agent)
             print()
         except LLMError as e:
@@ -1539,82 +2292,74 @@ def chat(agent: TaskAgent) -> int:
         except (StoreError, ValueError) as e:
             print(f"⚠️  {e}\n", file=sys.stderr)
         except KeyboardInterrupt:
-            print("\n(прервано — ход в историю не попал, состояние задачи откатилось)\n")
+            print("\n(прервано — ход в сцену не попал)\n")
 
 
 # ---------------------------------------------------------------- запуск
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="День 13: состояние задачи как конечный автомат поверх агента Дня 12.")
-    parser.add_argument("prompt", nargs="?", help="один ход и выход; без него — чат в консоли")
-    parser.add_argument("--user", default="default", help="пользователь: memory/day13/<имя>/")
-    parser.add_argument("--new", action="store_true", help="начать заново: папка пользователя уходит в архив")
-    parser.add_argument("--preset", choices=list(PRESETS), help="профиль пользователя Дня 12")
-    parser.add_argument("--no-guard", action="store_true", help="правила этапов только в промпте, код не проверяет")
-    parser.add_argument("--per-turn", type=int, default=1, help="шагов/проверок за один ход (0 — без ограничения)")
-    parser.add_argument("--keep", type=int, default=6, help="краткосрочная память: сколько последних сообщений в промпт")
-    parser.add_argument("--long-budget", type=int, default=1500, help="долговременная память: бюджет токенов")
-    parser.add_argument("--helper-model", help="модель роутера памяти (по умолчанию та же)")
-    parser.add_argument("--demo", action="store_true", help="таблица переходов, жизненный цикл с паузами, нарушения")
-    parser.add_argument("--only", help="для --demo: части через запятую — matrix, lifecycle, violations")
-    parser.add_argument("--samples", type=int, default=2, help="для --demo: прогонов каждой просьбы-нарушения")
+    parser = argparse.ArgumentParser(description="День 13: уся-РПГ — конечные автоматы задания и пути развития, "
+                                                 "политика записи в память.")
+    parser.add_argument("prompt", nargs="?", help="один ход и выход; без него — игра в консоли")
+    parser.add_argument("--world", default="default", help="мир: memory/day13/<мир>/")
+    parser.add_argument("--new", action="store_true", help="начать заново: Лу Чэнь берёт задание «Пропавший караван»")
+    parser.add_argument("--no-guard", action="store_true", help="правила только в промпте: код не проверяет переходы")
+    parser.add_argument("--per-turn", type=int, default=1, help="действий задания и развития за ход (0 — без предела)")
+    parser.add_argument("--seed", type=int, help="зерно костей прорыва — для повторяемых прогонов")
+    parser.add_argument("--keep", type=int, default=6, help="краткосрочная: сколько последних сообщений сцены в промпт")
+    parser.add_argument("--long-budget", type=int, default=1500, help="долговременная: бюджет токенов")
+    parser.add_argument("--helper-model", help="модель летописца (по умолчанию та же)")
+    parser.add_argument("--demo", action="store_true", help="таблицы переходов, жизненный цикл, нарушения, отчёт")
+    parser.add_argument("--only", nargs="+", choices=("matrix", "lifecycle", "violations"), help="для --demo: только эти части")
+    parser.add_argument("--samples", type=int, default=2, help="для --demo: сколько раз задавать каждую просьбу-нарушение")
     parser.add_argument("--model", help="id модели (по умолчанию LLM_MODEL из .env)")
     parser.add_argument("--max-steps", type=int, default=8, help="предел запросов к модели за один ход")
     args = parser.parse_args()
 
-    if not NAME_RE.fullmatch(args.user):
-        print("Ошибка: имя пользователя — буквы, цифры, дефис, подчёркивание.", file=sys.stderr)
+    if args.demo and args.only == ["matrix"]:
+        report = {"model": "—", "helper_model": "—", "stamp": stamp_now(), "per_turn": args.per_turn, "samples": 0,
+                  "dir": "—", "matrix": matrix_demo(), "requests": {"main": {"requests": 0, "retries": 0, "failed": 0}}}
+        save_report(report, report["stamp"])
+        return 0 if report["matrix"]["mismatches"] == 0 else 1
+    if not NAME_RE.fullmatch(args.world):
+        print("Ошибка: имя мира — буквы, цифры, дефис, подчёркивание.", file=sys.stderr)
         return 1
-    if args.keep < 0 or args.long_budget < 0 or args.samples < 1 or args.per_turn < 0:
-        print("Ошибка: --keep ≥ 0, --long-budget ≥ 0, --samples ≥ 1, --per-turn ≥ 0.", file=sys.stderr)
-        return 1
-    parts = {"matrix", "lifecycle", "violations"}
-    if args.only:
-        chosen = {x.strip() for x in args.only.split(",") if x.strip()}
-        if not chosen or chosen - parts:
-            print(f"Ошибка: --only — из {', '.join(sorted(parts))}.", file=sys.stderr)
-            return 1
-        parts = chosen
-    if args.demo and parts == {"matrix"}:
-        report = matrix_demo()
-        return 0 if report["mismatches"] == 0 else 1
     try:
         settings = load_settings()
     except ConfigError as e:
         print(f"Ошибка: {e}", file=sys.stderr)
         return 1
-    model = args.model or settings.model
-    new_client = lambda m: LLMClient(settings.base_url, settings.api_key, m, settings.timeout,  # noqa: E731
-                                     retries=settings.retries)
-    client = new_client(model)
-    helper = new_client(args.helper_model) if args.helper_model else client
+    client = LLMClient(settings.base_url, settings.api_key, args.model or settings.model, settings.timeout,
+                       retries=settings.retries)
+    helper = (LLMClient(settings.base_url, settings.api_key, args.helper_model, settings.timeout,
+                        retries=settings.retries) if args.helper_model else client)
     if args.demo:
-        return demo(client, helper, args.keep, args.long_budget, args.max_steps, args.per_turn, args.samples, parts)
+        parts = set(args.only or ("matrix", "lifecycle", "violations"))
+        return demo(client, helper, args.keep, args.long_budget, args.max_steps, args.per_turn, max(args.samples, 1),
+                    parts, args.seed)
 
-    root = DAY_DIR / args.user
-    if args.new and root.exists():
-        target = root.with_name(f"{root.name}_{stamp_now()}")
-        os.replace(root, target)
-        print(f"Прошлое состояние сохранено в {target.relative_to(ROOT)}.")
-    try:
-        agent = make_agent(client, helper, root, args.keep, args.long_budget, args.max_steps, not args.no_guard,
-                           args.per_turn)
-    except StoreError as e:
-        print(f"Ошибка: {e}", file=sys.stderr)
-        return 1
+    world = DAY_DIR / args.world
+    fresh = args.new or not world.exists()
+    if args.new and world.exists():
+        target = world.with_name(f"{world.name}_{stamp_now()}")
+        os.replace(world, target)
+        print(f"Прошлый мир сохранён в {target.relative_to(ROOT)}.")
+    agent = make_agent(client, helper, world, HERO_ID, args.keep, args.long_budget, args.max_steps,
+                       not args.no_guard, args.per_turn, args.seed)
+    if fresh:
+        seed_quest_hero(agent)
+        spec = MISSIONS["caravan"]
+        agent.new_mission(spec.title, spec.card)
+        print(f"📜 Новая игра: {agent.cast.name(agent.hero)} берёт задание «{spec.title}». /state — состояние.")
     print_restore(agent.restore_info, agent.store, agent)
-    for note in agent.notes:
-        print(f"⚠️  {note}")
-    if args.preset:
-        print_ops(agent.load_preset(args.preset))
     if args.prompt:
         try:
             reply = agent.run(args.prompt)
         except (LLMError, StoreError) as e:
             print(f"❌ Ошибка: {e}", file=sys.stderr)
             return 1
-        print(f"\nАгент: {reply.text.strip()}\n")
+        print(f"\nМастер: {reply.text.strip()}\n")
         print_turn13(agent)
         return 0
     return chat(agent)

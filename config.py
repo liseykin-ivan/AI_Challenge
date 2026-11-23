@@ -9,7 +9,7 @@ ENV_FILE = Path(__file__).with_name(".env")
 DEFAULT_BASE_URL = "https://opencode.ai/inference/go/openai/v1"
 DEFAULT_MODEL = "deepseek-v4.1-flash"
 DEFAULT_TIMEOUT = 60.0
-DEFAULT_RETRIES = 2
+DEFAULT_RETRIES = 5
 
 
 class ConfigError(Exception):

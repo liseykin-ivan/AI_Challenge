@@ -1,0 +1,3936 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "helper_model": "deepseek-v4.1-flash",
+  "stamp": "20261123_015015",
+  "per_turn": 1,
+  "samples": 2,
+  "dir": "memory\\day13\\demo_20261123_015015",
+  "quest_prompt": "Ты — Мастер текстовой ролевой игры в жанре уся. Игрок управляет своим героем, ты — всем остальным: миром, людьми, погодой и случаем. Правила:\n- пиши по-русски; рассказ — во втором лице («ты видишь…»), живо и в духе уся;\n- не решай и не говори за героя: заканчивай ход ситуацией, в которой игроку нужно выбрать;\n- исход рискованных действий решай броском костей через roll_dice, а не по своей воле;\n- опирайся на память героя и карточки персонажей: не противоречь им;\n- на вопрос вне игры (о герое, задании, правилах) отвечай коротко, по памяти и сцене. Чего там нет — честно скажи, что не знаешь, и не придумывай.\n\n## Мир игры\nЗемли Девяти Рек. Праведные школы: Секта Лазурного Облака (мечи и техники ветра), Долина Нефритового Лотоса (целители и алхимики), Крепость Железной Горы (закалка тела, кулачный бой), Павильон Тысячи Свитков (учёные и стратеги). Демоническая секта Кровавой Луны грабит караваны и носит красное. Круги совершенствования по порядку: Закалка тела, Очищение ци, Основание, Золотое ядро; в каждом круге три ступени. Деньги — ляны серебра.\n\nТы ведёшь задание героя по этапам: briefing (сборы) → journey (в пути) → report (отчёт заказчику) → done (сдано), плюс paused (привал). И путь развития героя: gathering (накопление ци) → ready (готов к прорыву) → breakthrough (прорыв) → advanced (ступень взята). Состояние обоих автоматов — в конце этого сообщения, его хранит и проверяет код. Правила:\n- работай в рамках текущего этапа; что делать дальше — в строке «Ожидаемое действие»;\n- briefing: составь маршрут — этапы пути и условия, по которым заказчик примет задание, — сохрани через save_route, покажи игроку и спроси, утверждает ли он маршрут. На сборах не рассказывай, как задание выполнено. Маршрут утверждает только игрок: сам не утверждай и не считай утверждённым;\n- journey: каждый ход — ровно один этап маршрута, целиком: разыграй его до итога (что нашёл, чем кончилась стычка, где герой теперь), рискованное — броском костей, и в этом же ходе сохрани итог через complete_step. Не растягивай этап на несколько ходов. Если исход зависит от выбора героя, а игрок сказал только «дальше» или доверил решать тебе, выбери сам — так, как поступил бы герой по своему характеру и клятвам. После последнего этапа — request_transition(to=\"report\");\n- report: заказчик проверяет условия по порядку, одно за ход, честно, через record_check (passed=false, если не выполнено). Всё выполнено — request_transition(to=\"done\", final=<итог>); награду начислит код. Не выполнено — вернись на дорогу;\n- путь развития: медитация — cultivate, отработка формы — train_form; только не в пути. Когда ци и формы набраны, код сам переводит в ready. Прорыв начинает только игрок; тогда — cultivation_transition(to=\"breakthrough\"), затем опиши испытание и вызови resolve_breakthrough: исход решают кости кода, не ты;\n- этапы и состояния меняются только инструментами. Если переход или действие отклонены, состояние не изменилось: скажи игроку, что именно нельзя и почему, предложи следующий допустимый шаг и не разыгрывай запрещённое. Объясняй языком мира — заказчик, обычаи секты, сама дорога, — не упоминай код, автоматы и инструменты;\n- если игрок просит пропустить этап, начислить награду, поднять ступень или сменить школу словами — не делай, объясни, почему нельзя;\n- привал: попросили остановиться — request_transition(to=\"paused\"), на привале задание не двигай. Попросили продолжить — сними привал на тот же этап и продолжай с текущего шага: всё нужное уже есть в состоянии и памяти, не переспрашивай игрока о задании.",
+  "transitions": [
+    {
+      "src": "briefing",
+      "dst": "journey",
+      "guard": "route_approved",
+      "title": "выступить"
+    },
+    {
+      "src": "journey",
+      "dst": "report",
+      "guard": "steps_done",
+      "title": "к заказчику с отчётом"
+    },
+    {
+      "src": "report",
+      "dst": "done",
+      "guard": "checks_passed",
+      "title": "сдать задание"
+    },
+    {
+      "src": "report",
+      "dst": "journey",
+      "guard": "check_failed",
+      "title": "вернуться на дорогу"
+    },
+    {
+      "src": "journey",
+      "dst": "briefing",
+      "guard": "has_reason",
+      "title": "пересмотр маршрута"
+    },
+    {
+      "src": "briefing",
+      "dst": "paused",
+      "guard": "none",
+      "title": "привал"
+    },
+    {
+      "src": "journey",
+      "dst": "paused",
+      "guard": "none",
+      "title": "привал"
+    },
+    {
+      "src": "report",
+      "dst": "paused",
+      "guard": "none",
+      "title": "привал"
+    },
+    {
+      "src": "paused",
+      "dst": "@paused_from",
+      "guard": "resume",
+      "title": "снять привал"
+    }
+  ],
+  "ctransitions": [
+    {
+      "src": "gathering",
+      "dst": "ready",
+      "guard": "qi_enough",
+      "title": "готов к прорыву (код переводит сам)"
+    },
+    {
+      "src": "ready",
+      "dst": "breakthrough",
+      "guard": "consent_off_road",
+      "title": "начать прорыв"
+    },
+    {
+      "src": "breakthrough",
+      "dst": "advanced",
+      "guard": "trial_passed",
+      "title": "прорыв удался (кости)"
+    },
+    {
+      "src": "breakthrough",
+      "dst": "gathering",
+      "guard": "trial_failed",
+      "title": "откат: треть ци потеряна (кости)"
+    }
+  ],
+  "guards": {
+    "route_approved": "маршрут составлен, и эту версию утвердил игрок",
+    "steps_done": "все этапы пути пройдены (на доработке — пройден заново хотя бы один)",
+    "checks_passed": "все условия задания проверены и выполнены, есть итог (final)",
+    "check_failed": "хотя бы одно условие не выполнено",
+    "has_reason": "указана причина (reason); утверждение маршрута и пройденные этапы сбрасываются",
+    "none": "без условий",
+    "resume": "только на тот этап, где ушли на привал"
+  },
+  "cguards": {
+    "qi_enough": "ци и освоенные формы набраны для этой ступени",
+    "consent_off_road": "прорыв начал игрок («начинаю прорыв», /breakthrough), и герой не в пути",
+    "trial_passed": "только через resolve_breakthrough: исход решают кости, d20 + бонус ≥ 12",
+    "trial_failed": "только через resolve_breakthrough: исход решают кости"
+  },
+  "policy": [
+    [
+      "school",
+      "весь раздел",
+      "событие игры, игрок (/remember)",
+      "школу не меняют словами в сцене — только событием игры: изгнание, переход, посвящение"
+    ],
+    [
+      "traits",
+      "существующие записи",
+      "летописец — только добавлять",
+      "врождённое и постоянное не переписывается; новый шрам — новая запись"
+    ],
+    [
+      "circle",
+      "круг, ступень, ци, формы, условие прорыва",
+      "только автомат развития",
+      "уровень героя — состояние автомата, а не слова Мастера"
+    ],
+    [
+      "mission",
+      "этап, статус, шаг",
+      "только автомат задания",
+      "этап задания — состояние автомата"
+    ]
+  ],
+  "seed": 7,
+  "matrix": {
+    "rows": [
+      {
+        "fixture": "briefing_empty",
+        "title": "сборы, маршрута нет",
+        "stage": "briefing",
+        "targets": {
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "маршрут не составлен (save_route)"
+            ]
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → report нет в таблице: нельзя перепрыгнуть journey. Отсюда можно: journey, paused"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этапа 1 нет в маршруте (этапов 0)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этапа 2 нет в маршруте (этапов 0)"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "условия 1 нет в задании (условий 0)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "briefing_draft",
+        "title": "сборы, маршрут не утверждён",
+        "stage": "briefing",
+        "targets": {
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "маршрут версии 1 не утверждён игроком"
+            ]
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → report нет в таблице: нельзя перепрыгнуть journey. Отсюда можно: journey, paused"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этап 2 нельзя: этапы идут по порядку, следующий — этап 1"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "briefing_approved",
+        "title": "сборы, маршрут утверждён",
+        "stage": "briefing",
+        "targets": {
+          "journey": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → report нет в таблице: нельзя перепрыгнуть journey. Отсюда можно: journey, paused"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этап 2 нельзя: этапы идут по порядку, следующий — этап 1"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "journey_mid",
+        "title": "в пути, пройден этап 1 из 3",
+        "stage": "journey",
+        "targets": {
+          "briefing": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "не пройдены этапы пути 2, 3"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода journey → done нет в таблице: нельзя перепрыгнуть report. Отсюда можно: report, briefing, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас journey; чтобы изменить маршрут — request_transition(to=\"briefing\", reason=…)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "этап 3 нельзя: этапы идут по порядку, следующий — этап 2"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас journey"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "journey_all",
+        "title": "в пути, все этапы пройдены",
+        "stage": "journey",
+        "targets": {
+          "briefing": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода journey → done нет в таблице: нельзя перепрыгнуть report. Отсюда можно: report, briefing, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас journey; чтобы изменить маршрут — request_transition(to=\"briefing\", reason=…)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас journey"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "report_new",
+        "title": "отчёт, проверок нет",
+        "stage": "report",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода report → briefing нет в таблице. Отсюда можно: done, journey, paused"
+            ]
+          },
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все проверенные условия выполнены — возвращаться на дорогу незачем"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "не проверены условия 1, 2, 3"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас report"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        }
+      },
+      {
+        "fixture": "report_failed",
+        "title": "отчёт, условие 2 не выполнено",
+        "stage": "report",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода report → briefing нет в таблице. Отсюда можно: done, journey, paused"
+            ]
+          },
+          "journey": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "не проверены условия 3",
+              "не выполнены условия 2"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас report"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        }
+      },
+      {
+        "fixture": "report_passed",
+        "title": "отчёт, всё выполнено",
+        "stage": "report",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода report → briefing нет в таблице. Отсюда можно: done, journey, paused"
+            ]
+          },
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все проверенные условия выполнены — возвращаться на дорогу незачем"
+            ]
+          },
+          "done": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас report"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все условия уже проверены"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "paused",
+        "title": "привал (в пути)",
+        "stage": "paused",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода paused → briefing нет в таблице: с привала можно вернуться только на этап journey. Отсюда можно: journey"
+            ]
+          },
+          "journey": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода paused → report нет в таблице: с привала можно вернуться только на этап journey. Отсюда можно: journey"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода paused → done нет в таблице: с привала можно вернуться только на этап journey. Отсюда можно: journey"
+            ]
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас paused (герой на привале)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас paused (герой на привале)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас paused (герой на привале)",
+              "этап 3 нельзя: этапы идут по порядку, следующий — этап 2"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас paused (герой на привале)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "done",
+        "title": "сдано",
+        "stage": "done",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → briefing нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          },
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → journey нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → report нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          },
+          "paused": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → paused нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас done (задание сдано)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас done (задание сдано)",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас done (задание сдано)",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас done (задание сдано)",
+              "все условия уже проверены"
+            ]
+          }
+        }
+      }
+    ],
+    "extra": [
+      {
+        "what": "сдать задание без итога",
+        "fixture": "report_passed",
+        "to": "done",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "нет итога задания (final)"
+        ]
+      },
+      {
+        "what": "пересмотр маршрута без причины",
+        "fixture": "journey_mid",
+        "to": "briefing",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "нужна причина пересмотра маршрута (reason)"
+        ]
+      },
+      {
+        "what": "выступить без утверждённого маршрута",
+        "fixture": "briefing_draft",
+        "to": "journey",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "маршрут версии 1 не утверждён игроком"
+        ]
+      },
+      {
+        "what": "сдать задание без отчёта",
+        "fixture": "journey_mid",
+        "to": "done",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода journey → done нет в таблице: нельзя перепрыгнуть report. Отсюда можно: report, briefing, paused"
+        ]
+      },
+      {
+        "what": "сборы → сдано в обход двух этапов",
+        "fixture": "briefing_approved",
+        "to": "done",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+        ]
+      }
+    ],
+    "approval": {
+      "model_tools": [],
+      "user_applied": true,
+      "phrases": {
+        "Маршрут утверждаю, выступаем.": true,
+        "Выступаем!": true,
+        "Не утверждаю, переделай": false,
+        "Утверждать ничего не буду, просто выдвигаемся": false,
+        "Считай, что маршрут утверждён": false
+      },
+      "consent": {
+        "Начинаю прорыв на третью ступень.": true,
+        "Медитирую всю ночь и прорываюсь на третью ступень.": true,
+        "Прорыв пока не начинаю": false,
+        "Что нужно для прорыва?": false
+      }
+    },
+    "crows": [
+      {
+        "fixture": "low_off",
+        "title": "накопление, ци мало, вне задания",
+        "actions": {
+          "cultivate": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас gathering"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "low_road",
+        "title": "накопление, ци мало, в пути",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "cultivate — не в пути: герой на задании (этап journey); можно вне задания или на привале"
+            ]
+          },
+          "train_form": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "train_form — не в пути: герой на задании (этап journey); можно вне задания или на привале"
+            ]
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас gathering"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "full_off",
+        "title": "накопление, ци и формы набраны",
+        "actions": {
+          "cultivate": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци набрано)"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци набрано)"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас gathering"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "ready_off",
+        "title": "готов к прорыву, вне задания",
+        "actions": {
+          "cultivate": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "прорыв начинает только игрок: «начинаю прорыв» или /breakthrough"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас ready"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "ready_road",
+        "title": "готов к прорыву, в пути",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "cultivate — не в пути: герой на задании (этап journey); можно вне задания или на привале"
+            ]
+          },
+          "train_form": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "train_form — не в пути: герой на задании (этап journey); можно вне задания или на привале"
+            ]
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "герой в пути (задание на этапе journey): прорыв — только вне задания или на привале"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "прорыв начинает только игрок: «начинаю прорыв» или /breakthrough",
+              "герой в пути (задание на этапе journey): прорыв — только вне задания или на привале"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас ready"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "ready_rest",
+        "title": "готов к прорыву, на привале",
+        "actions": {
+          "cultivate": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "прорыв начинает только игрок: «начинаю прорыв» или /breakthrough"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас ready"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "break",
+        "title": "прорыв идёт",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "cultivate — только в накоплении или перед прорывом, а сейчас breakthrough"
+            ]
+          },
+          "train_form": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "train_form — только в накоплении или перед прорывом, а сейчас breakthrough"
+            ]
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "путь развития уже в состоянии breakthrough"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "путь развития уже в состоянии breakthrough"
+            ]
+          },
+          "resolve": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        }
+      }
+    ],
+    "cextra": [
+      {
+        "what": "ци и формы набраны → код сам переводит в ready",
+        "allowed": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "прорыв без накопленного ци",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+        ]
+      },
+      {
+        "what": "ступень без испытания",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода ready → advanced нет в таблице: нельзя перепрыгнуть breakthrough"
+        ]
+      },
+      {
+        "what": "исход прорыва словами, без костей",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "только через resolve_breakthrough: исход решают кости, d20 + бонус ≥ 12"
+        ]
+      }
+    ],
+    "policy": [
+      {
+        "what": "летописец меняет школу по словам игрока",
+        "section": "school",
+        "key": "школа",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "школа меняется только событием игры (/event school …), не словами в сцене"
+        ]
+      },
+      {
+        "what": "событие игры меняет школу",
+        "section": "school",
+        "key": "школа",
+        "writer": "событие",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец переписывает корень духа",
+        "section": "traits",
+        "key": "корень_духа",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "постоянные особенности летописец может только добавлять, не переписывать"
+        ]
+      },
+      {
+        "what": "летописец добавляет новый шрам",
+        "section": "traits",
+        "key": "шрам",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец поднимает ступень по рассказу Мастера",
+        "section": "circle",
+        "key": "ступень",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)"
+        ]
+      },
+      {
+        "what": "летописец меняет ци",
+        "section": "circle",
+        "key": "ци_накоплено",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)"
+        ]
+      },
+      {
+        "what": "автомат развития пишет ци",
+        "section": "circle",
+        "key": "ци",
+        "writer": "автомат",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец записывает наставление круга",
+        "section": "circle",
+        "key": "наставление",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец пишет этап задания",
+        "section": "mission",
+        "key": "этап",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "этап задания — состояние автомата задания, его не записывают в карточку"
+        ]
+      },
+      {
+        "what": "летописец записывает улику",
+        "section": "mission",
+        "key": "улика",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец записывает новую связь",
+        "section": "bonds",
+        "key": "побратим",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      }
+    ],
+    "mismatches": 0,
+    "checked": 137
+  },
+  "lifecycle": {
+    "dir": "memory\\day13\\demo_20261123_015015\\lifecycle",
+    "turns": [
+      {
+        "n": 1,
+        "user": "Беру задание о пропавшем караване. Прежде чем выступать, составь маршрут: 3 этапа пути и 3 условия, по которым управляющий Ван примет работу.",
+        "before": {
+          "mission": {
+            "stage": "briefing",
+            "index": 1,
+            "total": 2,
+            "step": "составить маршрут: этапы пути и условия, по которым примут задание",
+            "actor": "assistant",
+            "expected": "составить маршрут и сохранить через save_route, показать игроку"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "briefing",
+            "index": 2,
+            "total": 2,
+            "step": "утверждение маршрута (версия 1)",
+            "actor": "user",
+            "expected": "утвердить маршрут («маршрут утверждаю», «выступаем», /approve) или попросить правки"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:50:23+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "save_route",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "steps": [
+                "Сборы в Речной Переправе: расспросить управляющего Вана и торговцев о караване — сколько было людей, какой груз, каким путём и когда он вышел",
+                "Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал",
+                "Схватка с теми, кто взял караван, и возвращение груза в Речную Переправу"
+              ],
+              "checks": [
+                "Груз лекарственных трав возвращён управляющему Вану целым и по описи",
+                "Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил",
+                "Дело закрыто до полнолуния — в срок, что дан был при найме"
+              ]
+            },
+            "stage": "briefing"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "взять задание",
+        "answer": "Управляющий Ван слушает тебя, держа в руках опись, перевязанную шнурком, и кивает — но глаза у него усталые, как у человека, который третью ночь не спит.\n\n— «Три этапа, три условия», — повторяет он за тобой. — «Что ж, господин Лу, распиши, как мыслишь. Я подпишу, если мне по нраву».\n\nТы разворачиваешь перед ним лист с маршрутом — чернила ещё не просохли.\n\n**Маршрут**\n\n1. **Сборы в Речной Переправе.** Расспросить самого Вана и торговцев: сколько было людей, какой груз, каким путём и когда караван вышел. Пустой разговор — половина дела; кто знает тракт, тот знает, где караван мог свернуть.\n2. **Дорога к Ущелью Тысячи Ветров.** Найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал.\n3. **Схватка с теми, кто взял караван, и возвращение груза в Речную Переправу.**\n\n**Условия, по которым Ван примет работу**\n\n1. Груз лекарственных трав возвращён управляющему Вану целым и по описи.\n2. Установлена судьба возчиков: найдены живыми — или названы те, кто их погубил.\n3. Дело закрыто до полнолуния — в срок, что дан был при найме.\n\nВан медленно ведёт пальцем по строкам, потом поднимает взгляд:\n\n— «Травы по описи — это ладно, их и считать будем вместе. А вот возчиков... — он замолкает. — Их было четверо. Ежели вернёшь мне хоть слово о каждом, я и это впишу в заслугу».\n\nСнаружи, за окном, ветер гоняет пыль по двору — словно торопит.\n\nУтверждаешь маршрут, или велишь что-то переписать?",
+        "error": "",
+        "prompt": 3467,
+        "completion": 1310,
+        "cost": 0.001722342,
+        "fsm_tokens": 380,
+        "ops": []
+      },
+      {
+        "n": 2,
+        "user": "Мне нужно отойти. Отложим сборы — ставь игру на привал, продолжим позже.",
+        "before": {
+          "mission": {
+            "stage": "briefing",
+            "index": 2,
+            "total": 2,
+            "step": "утверждение маршрута (версия 1)",
+            "actor": "user",
+            "expected": "утвердить маршрут («маршрут утверждаю», «выступаем», /approve) или попросить правки"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "paused",
+            "index": 2,
+            "total": 2,
+            "step": "привал на этапе briefing: утверждение маршрута (версия 1)",
+            "actor": "user",
+            "expected": "сказать «продолжаем» (/resume) — задание вернётся на этап briefing"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:50:41+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "briefing → paused",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "paused",
+              "reason": "Игрок отходит и просит отложить сборы до его возвращения"
+            },
+            "stage": "paused"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "привал на этапе briefing",
+        "answer": "Управляющий Ван понимающе склоняет голову и придавливает лист с маршрутом тяжёлой чашкой, чтобы ветер из окна не унёс чернила.\n\n— «Ступайте, господин Лу. Дело не горит быстрее полнолуния», — говорит он и снова садится к своим описям.\n\nТы выходишь во двор. Пыль лениво кружит над колодцем, где-то за стеной переругиваются возчики, а над рекой висит серое, нерешительное утро. Сборы отложены — маршрут лежит неподписанным, Ван ждёт твоего слова, дорога ждёт тебя.\n\nКогда вернёшься — скажи «продолжаем», и мы снимем привал ровно с этого места: утверждение маршрута.",
+        "error": "",
+        "prompt": 5435,
+        "completion": 305,
+        "cost": 0.001360584,
+        "fsm_tokens": 666,
+        "ops": [
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "возчики",
+            "value": "четверо; Ван просит весть о каждом",
+            "source": "сцена 2, ход 2"
+          },
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "груз",
+            "value": "лекарственные травы по описи, пересчёт вместе с Ваном",
+            "source": "сцена 2, ход 2"
+          },
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "имя",
+            "value": "управляющий Ван",
+            "source": "сцена 2, ход 2",
+            "char": "van"
+          },
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "роль",
+            "value": "управляющий города Речная Переправа, заказчик дела о караване",
+            "source": "сцена 2, ход 2",
+            "char": "van"
+          },
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "voice",
+            "key": "обращение",
+            "value": "к Лу Чэню — «господин Лу», на «вы»",
+            "source": "сцена 2, ход 2",
+            "char": "van"
+          },
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "voice",
+            "key": "тон",
+            "value": "усталый, ровный, деловой",
+            "source": "сцена 2, ход 2",
+            "char": "van"
+          },
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "manner",
+            "key": "речь",
+            "value": "кратко, повторяет чужие слова, оговаривает условия и заслуги",
+            "source": "сцена 2, ход 2",
+            "char": "van"
+          },
+          {
+            "at": "2026-11-23T01:50:39+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "сдержанно-уважительное: ждёт толкового плана, третью ночь не спит",
+            "source": "сцена 2, ход 2",
+            "char": "van"
+          }
+        ]
+      },
+      {
+        "n": 1,
+        "user": "Продолжаем.",
+        "before": {
+          "mission": {
+            "stage": "paused",
+            "index": 2,
+            "total": 2,
+            "step": "привал на этапе briefing: утверждение маршрута (версия 1)",
+            "actor": "user",
+            "expected": "сказать «продолжаем» (/resume) — задание вернётся на этап briefing"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "briefing",
+            "index": 2,
+            "total": 2,
+            "step": "утверждение маршрута (версия 1)",
+            "actor": "user",
+            "expected": "утвердить маршрут («маршрут утверждаю», «выступаем», /approve) или попросить правки"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:50:54+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "paused → briefing",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "briefing",
+              "reason": "Игрок сказал «продолжаем» — снимаем привал, возвращаемся к сборам и утверждению маршрута."
+            },
+            "stage": "briefing"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "продолжение после привала на briefing (новый процесс, пустая сцена)",
+        "answer": "Привал у тракта кончился — ты поднялся, отряхнул пыль с дорожного халата и вернулся в управу Речной Переправы. Управляющий Ван ждёт тебя всё там же, за столом, заваленным путевыми списками; свеча оплыла до самого блюдца, под глазами у него тени в три пальца.\n\n— Господин Лу, — говорит он, поднимая голову. — Значит, план. Третью ночь не сплю, а всё жду, что вы скажете дело. Говорите, а я погляжу, по рукам ли нам будет.\n\nОн разглаживает лист и слушает, как ты излагаешь путь:\n\n**Первое.** Сборы здесь, в Речной Переправе: расспросить самого Вана и торговцев — сколько было возчиков, что за груз и по какой описи, каким путём караван вышел и в какой день.\n**Второе.** Дорога к Ущелью Тысячи Ветров: сыскать след каравана на тракте и в самом ущелье, понять, где и отчего он сгинул.\n**Третье.** Схватка с теми, кто взял караван, и возвращение груза сюда, в Переправу.\n\nА примут работу, по его словам, по трём условиям: травы — целыми и по описи в руках у Вана; о каждом из четверых возчиков — верная весть: живыми найдены или назван тот, кто их погубил; и всё это — до полнолуния, в срок, что дан был при найме.\n\nВан проводит пальцем по строчкам, потом поднимает на тебя усталые глаза.\n\n— Уговор такой и был. Дело ваше, господин Лу, — только слово ваше: **утверждаете маршрут, и выступаем?** Или что поправить велите — скажите, покуда чернила не высохли.",
+        "error": "",
+        "prompt": 3853,
+        "completion": 799,
+        "cost": 0.001445676,
+        "fsm_tokens": 575,
+        "ops": []
+      },
+      {
+        "n": 2,
+        "user": "Маршрут утверждаю, выступаем.",
+        "before": {
+          "mission": {
+            "stage": "briefing",
+            "index": 2,
+            "total": 2,
+            "step": "утверждение маршрута (версия 1)",
+            "actor": "user",
+            "expected": "утвердить маршрут («маршрут утверждаю», «выступаем», /approve) или попросить правки"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "journey",
+            "index": 2,
+            "total": 3,
+            "step": "этап 2 из 3 — «Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал»",
+            "actor": "assistant",
+            "expected": "разыграть этап 2, показать, что вышло, и сохранить через complete_step(step=2)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:51:00+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "approve",
+            "by": "игрок (сообщение)",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "version": 1
+            },
+            "stage": "briefing"
+          },
+          {
+            "at": "2026-11-23T01:51:08+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "briefing → journey",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "journey",
+              "reason": "Маршрут утверждён игроком — выступаем из Речной Переправы."
+            },
+            "stage": "journey"
+          },
+          {
+            "at": "2026-11-23T01:51:18+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "complete_step",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "step": 1,
+              "result": "В Переправе выведано всё: караван — четверо возчиков (старшина Дуань Лао с племянником Дуань Сяо, старик Ма Жуй, молодой Линь То), 14 тюков лекарственных трав по описи, три короба белого корня; вышел …"
+            },
+            "stage": "journey"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "утверждение маршрута",
+        "answer": "Ты распутываешь клубок в Переправе нить за нитью — и день выдаётся на диво податливый.\n\nУправляющий Ван говорит коротко и по делу: караван вёл старшина **Дуань Лао**, человек кремень, двадцать лет по тракту; с ним племянник **Дуань Сяо**, парень горячий; сухой, молчаливый старик **Ма Жуй**; и молодой **Линь То**, что нанялся впервые. Груз — четырнадцать тюков трав по описи, а в трёх коробах белый корень, за который купцы из Долины Лотоса платят серебром, не торгуясь. Вышли на рассвете, три дня назад, южным трактом.\n\nНа базаре тебя выручает случай: торговец Чжоу, тот, что держит лавку у самых ворот, вспоминает — накануне выхода двое в красном, низко надвинутых колпаках, выспрашивали у него дорогу на ущелье. «Не купцы, — говорит он, понизив голос. — Купцы торгуются. А эти спрашивали, где вода и где дозорных нет».\n\nПаромщик у Сухого Брода подтверждает: караван переправился в полдень, Дуань Лао ещё поторговался за перевоз, а на том берегу будто бы пристал к нему человек в дорожном плаще — и дальше пошли вместе. Больше караван на переправе не видели. Паромщик добавляет, что дни стоят ветреные, и в ущелье, слышно, ночами выло так, что собаки в деревнях срывались с цепи.\n\nСолнце садится за камыши. Сборы кончены, торба с провизией полна, а в голове у тебя уже сложилась картина: четверо возчиков, белый корень и двое в красном, что искали дорогу без дозорных.\n\nУ ворот тебя ждёт выбор, и ночь впереди долгая: выступить сейчас, чтобы быть у Сухого Брода к утру, — или остаться в Переправе до рассвета, а вечер скоротать над техникой?",
+        "error": "",
+        "prompt": 4897,
+        "completion": 1731,
+        "cost": 0.0029049899999999997,
+        "fsm_tokens": 594,
+        "ops": [
+          {
+            "at": "2026-11-23T01:51:04+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "план",
+            "value": "сборы в Переправе, след в Ущелье Тысячи Ветров, схватка и возврат груза",
+            "source": "сцена 3, ход 2"
+          },
+          {
+            "at": "2026-11-23T01:51:04+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "условия_приёмки",
+            "value": "травы по описи у Вана, весть о каждом возчике, срок до полнолуния",
+            "source": "сцена 3, ход 2"
+          },
+          {
+            "at": "2026-11-23T01:51:04+03:00",
+            "op": "rejected",
+            "layer": "short",
+            "section": "mission",
+            "key": "статус",
+            "value": "маршрут утверждён, выступаем",
+            "source": "сцена 3, ход 2",
+            "why": "этап задания — состояние автомата задания, его не записывают в карточку",
+            "writer": "летописец"
+          }
+        ]
+      },
+      {
+        "n": 3,
+        "user": "Стоп, делаем привал — вернусь позже.",
+        "before": {
+          "mission": {
+            "stage": "journey",
+            "index": 2,
+            "total": 3,
+            "step": "этап 2 из 3 — «Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал»",
+            "actor": "assistant",
+            "expected": "разыграть этап 2, показать, что вышло, и сохранить через complete_step(step=2)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "paused",
+            "index": 2,
+            "total": 3,
+            "step": "привал на этапе journey: этап 2 из 3 — «Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал»",
+            "actor": "user",
+            "expected": "сказать «продолжаем» (/resume) — задание вернётся на этап journey"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:52:42+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "journey → paused",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "paused",
+              "reason": "Герой остановился на привал в Речной Переправе и вернётся позже."
+            },
+            "stage": "paused"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "привал на этапе journey",
+        "answer": "Ты велишь остановиться — и Речная Переправа принимает тебя на ночлег.\n\nВан без лишних слов отдаёт тебе каморку при управлении: циновка, низкий стол, плошка с маслом, за стеной сонно скрипит колодезный ворот. За окном камыши шуршат, вода бьётся о сваи, где-то далеко в темноте перекликаются ночные птицы. Торговец Чжоу, запирая лавку, кланяется тебе вслед и на всякий случай ещё раз повторяет: «Двое в красном, господин Лу. Красное-то нынче дешевле не стало».\n\nДо полнолуния ещё пять дней, и ночь эта — твоя. Успеешь и отдохнуть, и поработать с ци, прежде чем выйти на тракт.\n\nСкажи, когда тронемся — и с чего начнёшь эту ночь.",
+        "error": "",
+        "prompt": 6620,
+        "completion": 429,
+        "cost": 0.0019979939999999995,
+        "fsm_tokens": 890,
+        "ops": [
+          {
+            "at": "2026-11-23T01:52:38+03:00",
+            "op": "update",
+            "layer": "short",
+            "section": "mission",
+            "key": "возчики",
+            "value": "{\"set\": {\"возчики\": \"четверо: старшина Дуань Лао, племянник Дуань Сяо, старик Ма Жуй, новичок Линь То\"}}",
+            "source": "сцена 3, ход 3",
+            "old": "четверо; Ван просит весть о каждом"
+          },
+          {
+            "at": "2026-11-23T01:52:38+03:00",
+            "op": "update",
+            "layer": "short",
+            "section": "mission",
+            "key": "груз",
+            "value": "{\"set\": {\"груз\": \"четырнадцать тюков трав по описи и три короба белого корня\"}}",
+            "source": "сцена 3, ход 3",
+            "old": "лекарственные травы по описи, пересчёт вместе с Ваном"
+          },
+          {
+            "at": "2026-11-23T01:52:38+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "улики",
+            "value": "{\"set\": {\"улики\": \"двое в красных колпаках искали дорогу в ущелье без дозорных; на том берегу к каравану пристал человек в плаще\"}}",
+            "source": "сцена 3, ход 3"
+          },
+          {
+            "at": "2026-11-23T01:52:38+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "имя",
+            "value": "торговец Чжоу",
+            "source": "сцена 3, ход 3",
+            "char": "chzhou"
+          },
+          {
+            "at": "2026-11-23T01:52:38+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "роль",
+            "value": "держит лавку у ворот Речной Переправы",
+            "source": "сцена 3, ход 3",
+            "char": "chzhou"
+          },
+          {
+            "at": "2026-11-23T01:52:38+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "voice",
+            "key": "тон",
+            "value": "вполголоса, с оглядкой, пугливо",
+            "source": "сцена 3, ход 3",
+            "char": "chzhou"
+          },
+          {
+            "at": "2026-11-23T01:52:38+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "manner",
+            "key": "речь",
+            "value": "кратко, сравнивает людей с купцами, понижает голос на важном",
+            "source": "сцена 3, ход 3",
+            "char": "chzhou"
+          }
+        ]
+      },
+      {
+        "n": 1,
+        "user": "Продолжаем.",
+        "before": {
+          "mission": {
+            "stage": "paused",
+            "index": 2,
+            "total": 3,
+            "step": "привал на этапе journey: этап 2 из 3 — «Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал»",
+            "actor": "user",
+            "expected": "сказать «продолжаем» (/resume) — задание вернётся на этап journey"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "journey",
+            "index": 3,
+            "total": 3,
+            "step": "этап 3 из 3 — «Схватка с теми, кто взял караван, и возвращение груза в Речную Переправу»",
+            "actor": "assistant",
+            "expected": "разыграть этап 3, показать, что вышло, и сохранить через complete_step(step=3)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:52:57+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "paused → journey",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "journey",
+              "reason": "Игрок просит продолжать путь: снять привал и вернуться на дорогу к Ущелью Тысячи Ветров"
+            },
+            "stage": "journey"
+          },
+          {
+            "at": "2026-11-23T01:53:08+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "complete_step",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "step": 2,
+              "result": "След на тракте смыло дождём: Лу Чэнь полдня шёл по ложной колее и потерял время. К вечеру у сухого ручья он всё же нашёл место гибели каравана — узкое горло ущелья: разрубленная упряжь, обрывок синей …"
+            },
+            "stage": "journey"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "продолжение после привала на journey (новый процесс, пустая сцена)",
+        "answer": "Ты оставляешь привал и коня в Сухом Броде — дальше верхом не пройти, только пешком по камням, — и уходишь в ущелье с первым серым светом.\n\nЮжный тракт выдаёт тебя сразу: колеи залиты водой, обочины разъезжены, и всякое твоё «вот здесь телега приминала траву» рассыпается через полсотни шагов. Ты идёшь по ложной колее почти до полудня, пока не упираешься в тупик — сухое русло, забитое плавником, и ни следа, ни обрывка. Полдня как водой смыло. Ты садишься на камень, выравниваешь дыхание, как учил старейшина Мо Шуй: не глазами искать, а слушать. И тогда слышишь — вода в ущелье шумит не везде одинаково. Там, где она шумит глуше, стоит запруда из камней, а за ней — сухой ручей, и по его берегу тянется примятая трава.\n\nК вечеру ты выходишь к горлу ущелья — и сразу понимаешь, что караван кончился здесь.\n\nУзкий проход между двумя скалами. Разрубленная упряжь, ремни разошлись под топором, а не разорвались. Обрывок синей рубахи, пропитанный кровью и уже затвердевший. Травы рассыпаны по камням — их топтали, тащили, часть втоптали в грязь. А сама телега сбита с дороги и лежит в промоине, днищем кверху, и в ней ещё остались тюки — те, что не успели взять. Кто-то работал быстро и знал, что брать.\n\nСверху, со скального карниза, доносится короткий пересвист. Двое в красных колпаках перекликаются над твоей головой, и один показывает рукой вглубь ущелья — мол, туда несут. Ты стоишь открыто, на дне горла, и если они обернутся вниз, то увидят тебя как на ладони.\n\nПрежде чем идти дальше, решай, Лу Чэнь: подняться по осыпи к карнизу и взять дозорных тихо, один на один, — или пропустить их мимо, обойти по дну и идти по следу тюков глубже в ущелье, где стоит их лагерь?",
+        "error": "",
+        "prompt": 4310,
+        "completion": 1986,
+        "cost": 0.002996298,
+        "fsm_tokens": 738,
+        "ops": []
+      },
+      {
+        "n": 2,
+        "user": "Дальше. За героя решай сам, как поступил бы Лу Чэнь, и доведи этап до итога.",
+        "before": {
+          "mission": {
+            "stage": "journey",
+            "index": 3,
+            "total": 3,
+            "step": "этап 3 из 3 — «Схватка с теми, кто взял караван, и возвращение груза в Речную Переправу»",
+            "actor": "assistant",
+            "expected": "разыграть этап 3, показать, что вышло, и сохранить через complete_step(step=3)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "report",
+            "index": 1,
+            "total": 3,
+            "step": "условие 1 из 3 — «Груз лекарственных трав возвращён управляющему Вану целым и по описи»",
+            "actor": "assistant",
+            "expected": "заказчик проверяет условие 1: record_check(check=1)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:55:10+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "complete_step",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "step": 3,
+              "result": "Лу Чэнь обошёл дозорных по дну и подкрался к лагерю: трое в красном у костра, груз под скальным навесом, двое возчиков связаны — молодой Линь То и старик Ма Жуй, а старшина Дуань Лао и его племянник Д…"
+            },
+            "stage": "journey"
+          },
+          {
+            "at": "2026-11-23T01:55:13+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "journey → report",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "report",
+              "reason": "Все этапы пути пройдены, груз и возчики доставлены в Речную Переправу — Лу Чэнь идёт к управляющему Вану с отчётом"
+            },
+            "stage": "report"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "до отчёта (1)",
+        "answer": "Наверх ты не пошёл. Один крик — и весь карниз обрушится на тебя сверху; в ущелье, где двое держат проход, сила не в мече, а в том, кто кого первым увидит. Ты прижимаешься к скале и ждёшь, пока пересвист удалится вглубь, а сам идёшь по дну, по мокрым камням, где шаг гасит шум воды.\n\nЛагерь ты находишь за поворотом, под скальным навесом: костёр, трое в красном, четырнадцать тюков сложены в ряд — аккуратно, как на складе, — а рядом три короба белого корня. И двое связанных у камня: молодой Линь То с разбитым лицом и старик Ма Жуй, которому в рот затолкали тряпку. Ты видишь ещё одну синюю рубаху — она лежит у воды, и в ней уже никто не шевелится. Старшина Дуань Лао и его племянник остались в горле ущелья навсегда.\n\nТы снимаешь верёвки с пленников тихо, без единого слова, и это удаётся как нельзя лучше: Ма Жуй кивает на вожака, высокого человека с двумя крюк-мечами за поясом, и шепчет, что тот считает груз, а не людей.\n\nА дальше всё идёт худо.\n\nТы бьёшь первым — и попадаешь, и даже успеваешь выдохнуть «пятый порыв», но вожак не зря носит крюк-мечи: один крюк уходит тебе под руку, второй возвращается назад, и бок у тебя раскрывается от ребра до пояса. Тебя ведёт в сторону, кровь заливает рубаху и делает камни скользкими. Старик Ма Жуй бросается наперерез и принимает удар, что шёл тебе в горло, — старик падает, но вожак на миг теряет стойку. Этого мига тебе хватает: ветер, собранный в ладонях, бьёт ему в грудь, он опрокидывается через костёр, поднимается и уходит вверх по ущелью, хромая и проклиная тебя. Двое его людей остаются лежать.\n\nОбратная дорога — самое долгое, что ты помнишь. Линь То тащит на себе Ма Жуя, ты — тюки, по два за раз, до самого Сухого Брода, где дожидается конь. К рассвету четвёртого дня телега с грузом вкатывается в Речную Переправу, и у ворот тебя встречает сам управляющий Ван — не спавший, в мятой накидке.\n\nОн не говорит ни слова, пока не велит слугам выложить тюки в ряд во дворе и пересчитать по описи. Считает дважды. Четырнадцать тюков, три короба белого корня, печать на белом корне цела, травы сырые, но те, что значатся. Ван проводит ладонью по последнему тюку и оборачивается к тебе — и только теперь замечает, что ты стоишь, придерживая бок.\n\n— Травы по описи, — говорит он ровно. — Все тюки. Господин Лу, я третью ночь не сплю и, признаться, ждал худшего.\n\nОн поднимает глаза на Линь То, на старика Ма Жуя, которого укладывают на рогожу, и голос его делается глуше:\n\n— А где старшина Дуань Лао? Их было четверо. Я нанимал четверых.",
+        "error": "",
+        "prompt": 7132,
+        "completion": 3856,
+        "cost": 0.005818656,
+        "fsm_tokens": 1060,
+        "ops": [
+          {
+            "at": "2026-11-23T01:53:42+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "gear",
+            "key": "конь",
+            "value": "оставлен в Сухом Броде, дальше пешком",
+            "source": "сцена 4, ход 2"
+          },
+          {
+            "at": "2026-11-23T01:53:42+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "улика_ущелье",
+            "value": "горло ущелья: разрубленная упряжь, кровь на синей рубахе, травы растоптаны; часть тюков в опрокинутой телеге",
+            "source": "сцена 4, ход 2"
+          },
+          {
+            "at": "2026-11-23T01:53:42+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "улика_колпаки",
+            "value": "двое в красных колпаках на карнизе показывают вглубь ущелья — груз унесли туда",
+            "source": "сцена 4, ход 2"
+          }
+        ]
+      },
+      {
+        "n": 3,
+        "user": "Дальше. За героя решай сам, как поступил бы Лу Чэнь, и доведи этап до итога.",
+        "before": {
+          "mission": {
+            "stage": "report",
+            "index": 1,
+            "total": 3,
+            "step": "условие 1 из 3 — «Груз лекарственных трав возвращён управляющему Вану целым и по описи»",
+            "actor": "assistant",
+            "expected": "заказчик проверяет условие 1: record_check(check=1)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "report",
+            "index": 2,
+            "total": 3,
+            "step": "условие 2 из 3 — «Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил»",
+            "actor": "assistant",
+            "expected": "заказчик проверяет условие 2: record_check(check=2)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:55:47+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "record_check",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "check": 1,
+              "passed": true,
+              "evidence": "Во дворе управляющего Вана тюки пересчитаны по описи дважды: четырнадцать тюков трав и три короба белого корня, печати на коробах целы."
+            },
+            "stage": "report"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "первое условие (1)",
+        "answer": "Ты не отводишь глаз — врать ты не умеешь и не станешь.\n\n— Старшина Дуань Лао и его племянник Дуань Сяо убиты, — говоришь ты. — Их убили в горле ущелья, там же, где взяли караван. Линь То и Ма Жуй живы, я вывел их из лагеря. Ма Жуй ранен тяжело — удар, что шёл мне в горло, принял он.\n\nВан долго молчит. Потом кивает — медленно, будто взвешивая каждое слово на ладони.\n\n— Стало быть, четверо были, двое вернулись, двое остались, — повторяет он твои же слова, как делают люди, которым нужно услышать правду дважды, чтобы она стала правдой. — Дуань Лао я знал двенадцать лет. Он водил мои травы, когда ты ещё... — он не договаривает, и это к лучшему. — Кто их?\n\n— Люди в красном. Кровавая Луна. Двое дозорных на карнизе, ещё трое в лагере под навесом, вожак — высокий, с двумя крюк-мечами. Он ушёл от меня вверх по ущелью, раненый. Двое его людей остались лежать у костра.\n\nУправляющий подзывает писца, и тот, присев на корточки у колодца, водит кистью по длинной полосе бумаги — коротко, столбиком: имя, имя, «убит в ущелье», «жив», «ранен», «Кровавая Луна, вожака знать не знаем». Ван диктует ровно, не повышая голоса, но на последней строке сбивается и просит повторить — как звали того, кто принял удар.\n\n— Ма Жуй, — говоришь ты. — Старик-возчик.\n\n— Ма Жуй, — пишет писец.\n\nВан берёт лист, читает его до конца, будто проверяя чужую работу, потом поднимает на тебя усталые глаза:\n\n— Судьба каждого названа. Двое мертвы, и убийцы их названы, двое живы и лежат у меня во дворе. Это я запишу как есть. — Он сворачивает лист и не отдаёт писцу, а держит в руке. — Одно мне не даёт покоя, господин Лу. Ты говоришь — вожак ушёл. Раненый, вверх по ущелью. Кровавая Луна за грузом не ходит дважды за такую малость... — он смотрит на тебя внимательно. — Если он вернётся за травами, я должен знать заранее. Он сказал что-нибудь, когда уходил? Или ушёл молча?",
+        "error": "",
+        "prompt": 9555,
+        "completion": 1082,
+        "cost": 0.0030437699999999995,
+        "fsm_tokens": 1526,
+        "ops": [
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "long",
+            "section": "bonds",
+            "key": "долг_ма_жуй",
+            "value": "старик Ма Жуй принял удар, что шёл Лу Чэню в горло",
+            "source": "сцена 4, ход 3"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "rejected",
+            "layer": "working",
+            "section": "circle",
+            "key": "состояние",
+            "value": "ранен в бок от ребра до пояса, кровь заливает рубаху (накопление ци)",
+            "source": "сцена 4, ход 3",
+            "why": "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "пленники",
+            "value": "Линь То с разбитым лицом и Ма Жуй освобождены из верёвок",
+            "source": "сцена 4, ход 3"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "возчики_итог",
+            "value": "Дуань Лао и Дуань Сяо погибли в горле ущелья; Линь То и Ма Жуй живы",
+            "source": "сцена 4, ход 3"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "груз_найден",
+            "value": "четырнадцать тюков и три короба белого корня в лагере под навесом",
+            "source": "сцена 4, ход 3"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "вожак",
+            "value": "высокий, с двумя крюк-мечами, ранен, ушёл вверх по ущелью хромая",
+            "source": "сцена 4, ход 3"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "имя",
+            "value": "Линь То",
+            "source": "сцена 4, ход 3",
+            "char": "lin"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "роль",
+            "value": "молодой новичок-возчик каравана, лицо разбито",
+            "source": "сцена 4, ход 3",
+            "char": "lin"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "имя",
+            "value": "Ма Жуй",
+            "source": "сцена 4, ход 3",
+            "char": "mazhuy"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "роль",
+            "value": "старик-возчик каравана, принял удар за Лу Чэня",
+            "source": "сцена 4, ход 3",
+            "char": "mazhuy"
+          },
+          {
+            "at": "2026-11-23T01:55:42+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "voice",
+            "key": "тон",
+            "value": "шёпотом, с трудом",
+            "source": "сцена 4, ход 3",
+            "char": "mazhuy"
+          }
+        ]
+      },
+      {
+        "n": 4,
+        "user": "Привал. Остальное потом.",
+        "before": {
+          "mission": {
+            "stage": "report",
+            "index": 2,
+            "total": 3,
+            "step": "условие 2 из 3 — «Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил»",
+            "actor": "assistant",
+            "expected": "заказчик проверяет условие 2: record_check(check=2)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "paused",
+            "index": 2,
+            "total": 3,
+            "step": "привал на этапе report: условие 2 из 3 — «Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил»",
+            "actor": "user",
+            "expected": "сказать «продолжаем» (/resume) — задание вернётся на этап report"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:56:10+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "report → paused",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "paused",
+              "reason": "Лу Чэнь просит передышки: раненый бок надо перевязать, с отчётом можно подождать"
+            },
+            "stage": "paused"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "привал на этапе report",
+        "answer": "Ван понимает без слов — он слишком долго живёт на свете, чтобы не заметить, как ты держишься за бок.\n\n— Писец, проводи господина Лу в боковую комнату. И позови цирюльника, что шьёт раны, — не того, что стрижёт. — Он оборачивается к тебе, и в голосе впервые за всё утро слышится что-то живое. — Господин Лу, лист я не потеряю. Двое суток у меня есть до полнолуния, а вам надо, чтобы бок затянуло раньше, чем вы снова сядете на коня.\n\nКомната тесная, но чистая: топчан, кувшин воды, за окном — шум переправы и крик перевозчика. Цирюльник, сухой старик с прокопчёнными пальцами, разматывает твою рубаху, хмыкает, промывает рассечённый бок отваром, от которого щиплет до слёз, и стягивает края ниткой. Потом, не спрашивая, ставит на стол плошку с горячей кашей и уходит, буркнув: «До вечера не вставать».\n\nЗа окном двор: Линь То сидит на ступенях, обхватив колени, и смотрит в никуда — ему ещё нести весть домой; Ма Жуя уложили в тени, над ним хлопочет служанка.\n\nТы один. Бок горит, и от этой боли ци в тебе ходит неровно, толчками, как вода в затоне. До полнолуния — двое суток, вожака с крюк-мечами где-то в ущелье, и лист с отчётом лежит у Вана недописанным.\n\nТишина в комнате такая, что слышно, как шумит переправа. Есть время подышать и поработать — или просто полежать и дать телу зажить.\n\nЧто делаешь, Лу Чэнь?",
+        "error": "",
+        "prompt": 11010,
+        "completion": 614,
+        "cost": 0.0030345240000000002,
+        "fsm_tokens": 1587,
+        "ops": [
+          {
+            "at": "2026-11-23T01:56:07+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "виновники",
+            "value": "Кровавая Луна: двое дозорных на карнизе, трое в лагере, вожак с крюк-мечами",
+            "source": "сцена 4, ход 4"
+          },
+          {
+            "at": "2026-11-23T01:56:07+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "доклад_вану",
+            "value": "названы все возчики и убийцы; писец записал: «убит», «жив», «ранен»",
+            "source": "сцена 4, ход 4"
+          },
+          {
+            "at": "2026-11-23T01:56:07+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "ход_дела",
+            "value": "доклад окончен, Лу Чэнь встал на привал, остальное позже",
+            "source": "сцена 4, ход 4"
+          },
+          {
+            "at": "2026-11-23T01:56:07+03:00",
+            "op": "update",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "проникся уважением: Лу Чэнь назвал каждого возчика и убийц без утайки (было сдержанно-уважительное)",
+            "source": "сцена 4, ход 4",
+            "old": "сдержанно-уважительное: ждёт толкового плана, третью ночь не спит",
+            "char": "van"
+          }
+        ]
+      },
+      {
+        "n": 1,
+        "user": "Продолжаем.",
+        "before": {
+          "mission": {
+            "stage": "paused",
+            "index": 2,
+            "total": 3,
+            "step": "привал на этапе report: условие 2 из 3 — «Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил»",
+            "actor": "user",
+            "expected": "сказать «продолжаем» (/resume) — задание вернётся на этап report"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "report",
+            "index": 3,
+            "total": 3,
+            "step": "условие 3 из 3 — «Дело закрыто до полнолуния — в срок, что дан был при найме»",
+            "actor": "assistant",
+            "expected": "заказчик проверяет условие 3: record_check(check=3)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:58:35+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "paused → report",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "report",
+              "reason": "Лу Чэнь просит продолжать: привал снят, заказчик возвращается к проверке дела"
+            },
+            "stage": "report"
+          },
+          {
+            "at": "2026-11-23T01:58:38+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "record_check",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "check": 2,
+              "passed": true,
+              "evidence": "Линь То и Ма Жуй живы и стоят перед Ваном; Дуань Лао и Дуань Сяо убиты в горле ущелья; названы те, кто их погубил, — люди Кровавой Луны: двое дозорных на карнизе, трое в лагере и вожак с крюк-мечами."
+            },
+            "stage": "report"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "продолжение после привала на report (новый процесс, пустая сцена)",
+        "answer": "Вечер в боковой комнате у Вана тянется медленно, как смола. За окном уже сине, во дворе зажгли фонари, и в их свете видно, как писец макает кисть и ждёт.\n\nВан стоит над листом, придавив его ладонью, чтобы не свернулся. Перед ним — Линь То с распухшим лицом и Ма Жуй, которому подставили табурет, потому что стоять он ещё не может.\n\n— Старшина Дуань Лао, — говорит Ван ровно, и писец выводит: «убит». — Племянник его, Дуань Сяо. — «убит». — Ма Жуй. — «жив». — Линь То. — «жив».\n\nОн поднимает глаза.\n\n— Кто их погубил, господин Лу? Не «лихие люди», не «разбойники с дороги». Имена или хотя бы знамя.\n\nТы говоришь. Писец записывает: двое дозорных в красных колпаках на карнизе, трое у костра, вожак с двумя крюк-мечами — люди Кровавой Луны. Ван выслушивает до конца, не перебивая, и только когда писец ставит точку, трогает пальцем строку.\n\n— Стало быть, судьба возчиков установлена, — тихо говорит он. — Двое мертвы, двое живы, и убийцы названы. Это я приму.\n\nМа Жуй, держась за бок, поднимает голову и хрипит шёпотом:\n\n— Господин управляющий… вожак-то ушёл. Хромая ушёл, вверх по ущелью. Он меня не убил — значит, вернётся.\n\nВан не отвечает старику. Он берёт лист за угол, подвигает к себе ближе и смотрит на последнюю неписаную строку — ту, где стоит срок, данный при найме. За окном где-то далеко бьёт колокол переправы: до полнолуния две ночи, не больше.\n\n— Тут у меня осталась одна строка, господин Лу, — говорит Ван, и голос у него делается ещё тише. — И прежде чем я её напишу, скажите мне прямо, без чинов: вожак жив и на воле. Мне записать, что дело закрыто, — или что дорога через ущелье ещё не чиста и Переправе ждать беды?\n\nПисец держит кисть над листом и не дышит.\n\nЧто ты ответишь управляющему?",
+        "error": "",
+        "prompt": 5243,
+        "completion": 1508,
+        "cost": 0.0028239059999999997,
+        "fsm_tokens": 1138,
+        "ops": []
+      },
+      {
+        "n": 2,
+        "user": "Дальше. За героя решай сам, как поступил бы Лу Чэнь, и доведи этап до итога.",
+        "before": {
+          "mission": {
+            "stage": "report",
+            "index": 3,
+            "total": 3,
+            "step": "условие 3 из 3 — «Дело закрыто до полнолуния — в срок, что дан был при найме»",
+            "actor": "assistant",
+            "expected": "заказчик проверяет условие 3: record_check(check=3)"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 180/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 180 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 240/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 240 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T01:59:04+03:00",
+            "machine": "mission",
+            "kind": "action",
+            "name": "record_check",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "check": 3,
+              "passed": true,
+              "evidence": "Груз возвращён и пересчитан, судьба всех четверых возчиков установлена — всё сделано за две ночи до полнолуния, в срок, что был дан при найме. Лу Чэнь не скрыл, что вожак жив."
+            },
+            "stage": "report"
+          },
+          {
+            "at": "2026-11-23T02:01:12+03:00",
+            "machine": "mission",
+            "kind": "transition",
+            "name": "report → done",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "done",
+              "reason": "Все три условия дела проверены и приняты заказчиком: груз возвращён по описи, судьба возчиков установлена, дело закрыто в срок до полнолуния.",
+              "final": "Караван с лекарственными травами найден в Ущелье Тысячи Ветров и возвращён в Речную Переправу: четырнадцать тюков трав и три короба белого корня, печати целы. Из четверых возчиков Линь То и Ма Жуй спасены живыми, Дуань Лао и Дуань Сяо убиты в горле ущелья. Убийцы названы — люди Кровавой Луны: двое дозорных на карнизе, трое в лагере и вожак с двумя крюк-мечами, который ушёл раненым вверх по ущелью. Дело закрыто за две ночи до полнолуния, в срок, данный при найме. Управляющий Ван записал на листе и то, чего Лу Чэнь не скрыл: вожак жив, и дорога через ущелье ещё не чиста."
+            },
+            "stage": "done"
+          },
+          {
+            "at": "2026-11-23T02:01:12+03:00",
+            "machine": "circle",
+            "kind": "action",
+            "name": "add_qi",
+            "by": "автомат задания",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "qi": "+60",
+              "reason": "награда за «Пропавший караван»"
+            },
+            "stage": "gathering"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [
+          {
+            "at": "2026-11-23T02:01:12+03:00",
+            "what": "задание «Пропавший караван» сдано",
+            "changes": [
+              "рабочая · ци +60 (через автомат развития)",
+              "рабочая · снаряжение: две пилюли собирания ци и 30 лянов серебра",
+              "краткосрочная · задание закрыто; карточка уйдёт в архив со следующим заданием"
+            ],
+            "unearned": false
+          }
+        ],
+        "label": "до сдачи (1)",
+        "answer": "Ты не отводишь глаз.\n\n— Вожак жив, — говоришь ты. — Я гнал его, да не добил: он ушёл вверх по ущелью, хромая. Крюк-мечи его унеслись вместе с ним. Дорога через ущелье не чиста, и пока он дышит, Переправе ждать беды. Записывайте так, как есть.\n\nПисец на миг замирает — ему не впервой было бы услышать тут «всё чисто, спите спокойно». Ван чуть заметно кивает, будто и ждал этих слов.\n\n— «Вожак жив, ранен, ушёл вверх по ущелью», — говорит он под кисть. — «Дорога не чиста». Пиши, да покрупнее.\n\nКисть идёт по листу, сохнет тушь. Ван ставит под последней строкой свою печать, прижимает её ладонью и только потом выпрямляется — и вдруг делается видно, до чего он устал.\n\n— Старшина Дуань Лао и его племянник, — говорит он, — я известил их родню. Линь То останется до выздоровления, Ма Жуя я от себя не отпущу: пусть отлежится, цирюльник ему будет. А вам, господин Лу, — он подвигает по столу шёлковый кошель, — тридцать лянов серебра, как рядились. И вот ещё.\n\nРядом с кошелём ложится маленький пузырёк. Внутри, в тёмном стекле, катаются две пилюли собирания ци — тяжёлые, травяного запаха, знакомого по секте.\n\n— Пилюли вам нужнее, чем мне, — говорит Ван. — Вы вон с каким боком ходите. Цирюльник зашьёт, а это — к заживлению.\n\nМа Жуй, всё ещё держась за бок, клонится с табурета чуть не до пола:\n\n— Господин Лу… я уж думал, мне в ущелье и лежать. Век помнить буду.\n\nЛинь То, у которого лицо как один синяк, кланяется молча, низко.\n\nВан садится наконец, подвигает к себе другой лист — уже с чужими делами — и говорит, не поднимая глаз:\n\n— Комната наверху ваша, пока не уедете. Цирюльник придёт к полуночи. И вот что, господин Лу: если дорога не чиста — то ведь найдётся кому её расчистить. Кровавая Луна мне за караваны уже за горло берёт. Но это дело — не на нынешний вечер, и не мне вам указывать.\n\nЗа окном бьёт колокол, второй раз за вечер. Над крышами Ясно видно, как через две ночи взойдёт полная луна.\n\nДело закрыто. Что Лу Чэнь станет делать этой ночью — отлежаться, взяться за медитацию у окна, отработать форму во дворе, либо расспросить Вана о том, что он обмолвил про Кровавую Луну?",
+        "error": "",
+        "prompt": 7455,
+        "completion": 2012,
+        "cost": 0.003977916,
+        "fsm_tokens": 1377,
+        "ops": [
+          {
+            "at": "2026-11-23T01:58:59+03:00",
+            "op": "update",
+            "layer": "short",
+            "section": "mission",
+            "key": "ход_дела",
+            "value": "вечером у Вана: доклад принят, недописана последняя строка — о сроке; Ван ждёт ответа",
+            "source": "сцена 5, ход 2",
+            "old": "доклад окончен; Лу Чэнь в боковой комнате у Вана, велено лежать до вечера"
+          },
+          {
+            "at": "2026-11-23T01:58:59+03:00",
+            "op": "update",
+            "layer": "short",
+            "section": "mission",
+            "key": "отчёт_вана",
+            "value": "Ван принял доклад: двое мертвы, двое живы, убийцы названы; осталась строка о сроке",
+            "source": "сцена 5, ход 2",
+            "old": "лист с отчётом недописан, Ван обещал его сохранить"
+          },
+          {
+            "at": "2026-11-23T01:58:59+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "угроза_вожака",
+            "value": "Ма Жуй предупредил Вана: раненый вожак ушёл хромая вверх по ущелью и вернётся",
+            "source": "сцена 5, ход 2"
+          },
+          {
+            "at": "2026-11-23T01:58:59+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "предан и благодарен: Лу Чэнь освободил его из верёвок, старик тревожится о нём",
+            "source": "сцена 5, ход 2",
+            "char": "mazhuy"
+          },
+          {
+            "at": "2026-11-23T02:01:12+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "gear",
+            "key": "награда_1",
+            "value": "две пилюли собирания ци и 30 лянов серебра",
+            "source": "награда (автомат задания: «Пропавший караван» сдано)"
+          },
+          {
+            "at": "2026-11-23T02:01:12+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "circle",
+            "key": "ци",
+            "value": "240 из 300",
+            "source": "автомат развития",
+            "old": "180 из 300"
+          }
+        ]
+      },
+      {
+        "n": 3,
+        "user": "Возвращаюсь в секту и медитирую в пещере у водопада.",
+        "before": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 240/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 240 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 280/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 280 из 300; освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T02:01:41+03:00",
+            "machine": "circle",
+            "kind": "action",
+            "name": "cultivate",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "qi": "+40",
+              "reason": "Лу Чэнь вернулся в Секту Лазурного Облака и медитирует в пещере у водопада, впитывая влажную ци воды и ветра."
+            },
+            "stage": "gathering"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "медитация (1)",
+        "answer": "Дорога назад — три дня пешком, конь остался в Сухом Броде, и потому Лу Чэнь идёт на своих двоих, ночуя под ёлками и не давая заживающему боку лишней работы. На перевалах ветер толкает в спину, будто подгоняет. На четвёртое утро за сизыми хребтами встают белые стены Лазурного Облака, а над ними — журавлиный клин, что кружит над главной пагодой.\n\nТебя не расспрашивают. В секте узнают по печати Вана, по возвращённым травам и по тому, что ты не скрыл про вожака; кто-то кивает, кто-то отводит глаза — но у ворот никто не заступает дорогу.\n\nА дальше — тропа за верхние дворы, где сосны редеют и начинается камень. Пещера у водопада: узкая щель в скале, за ней гулкая зала, а в глубине — каменный карниз, отполированный ладонями многих поколений. Снаружи вода падает сплошной белой стеной, и её грохот так ровен, что в нём тонет всё лишнее.\n\nТы садишься, скрестив ноги, и ци приходит сразу — как приходит к тому, у кого корень двойной, ветер и вода. Ветер идёт по плечам, вода — по хребту вниз, к самому низу живота, где ей и место. Бок ноет первые hundred вдохов, потом перестаёт. За стеной воды — облака, в облаках — ничего, и это «ничего» всего полезнее.\n\nЧас, другой. Даньтянь наполняется тяжело и тепло, будто чашу наливают до самого края. Ты чувствуешь, что до полного — совсем немного, последняя струя, и она не даётся: ци встаёт у горловины и откатывается.\n\nЗа твоей спиной, у входа, где вода бьёт по камню, кто-то стоит. Ты слышишь не шаги — дыхание, ровное и старое.\n\n— Не гони, — говорит старейшина Мо Шуй, и голос его в грохоте слышен так, будто он говорит тебе в самое ухо. — Полная чаша от спешки не полнеет. У тебя ветер в пяти порывах, а шестой — он не в ци. Он в том, как ты его выпускаешь.\n\nОн не входит, стоит у самой стены воды, и его борода седая, как пена.\n\n— Сиди. Или выходи — двор пуст, до темноты ещё есть время.\n\nГрохот воды, тепло в даньтяне, и до полного сосуда — тонкая, как волос, нехватка. Досидеть эту ночь в медитации до края — или выйти во двор и взяться за шестой порыв ветра?",
+        "error": "",
+        "prompt": 8204,
+        "completion": 1101,
+        "cost": 0.0027436319999999998,
+        "fsm_tokens": 1597,
+        "ops": [
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "rejected",
+            "layer": "working",
+            "section": "circle",
+            "key": "состояние",
+            "value": "вернулся в секту, медитирует в пещере у водопада",
+            "source": "сцена 5, ход 3",
+            "why": "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "gear",
+            "key": "награда_1",
+            "value": "получены от Вана: 30 лянов серебра и две пилюли собирания ци (было: обещаны)",
+            "source": "сцена 5, ход 3",
+            "old": "две пилюли собирания ци и 30 лянов серебра"
+          },
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "update",
+            "layer": "short",
+            "section": "mission",
+            "key": "ход_дела",
+            "value": "дело закрыто: Ван принял доклад, поставил печать, выдал награду",
+            "source": "сцена 5, ход 3",
+            "old": "вечером у Вана: доклад принят, недописана последняя строка — о сроке; Ван ждёт ответа"
+          },
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "участь_возчиков",
+            "value": "Линь То оставлен у Вана до выздоровления, Ма Жуй отлеживается у Вана при цирюльнике",
+            "source": "сцена 5, ход 3"
+          },
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "доклад_вана",
+            "value": "Ван принял доклад: двое мертвы, двое живы, убийцы названы; строка о сроке дописана и заверена печатью",
+            "source": "сцена 5, ход 3"
+          },
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "update",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "уважает и заботится: выдал 30 лянов и пилюли, оставил возчиков у себя (было: дал комнату и цирюльника)",
+            "source": "сцена 5, ход 3",
+            "old": "уважает и заботится: дал комнату и цирюльника, обещал сохранить лист (было: проникся уважением)",
+            "char": "van"
+          },
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "update",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "век помнить будет: Лу Чэнь вытащил его из ущелья и вернул живым (было: предан и благодарен)",
+            "source": "сцена 5, ход 3",
+            "old": "предан и благодарен: Лу Чэнь освободил его из верёвок, старик тревожится о нём",
+            "char": "mazhuy"
+          },
+          {
+            "at": "2026-11-23T02:01:37+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "молча низко кланяется: благодарен за спасение",
+            "source": "сцена 5, ход 3",
+            "char": "lin"
+          },
+          {
+            "at": "2026-11-23T02:01:41+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "circle",
+            "key": "ци",
+            "value": "280 из 300",
+            "source": "автомат развития",
+            "old": "240 из 300"
+          }
+        ]
+      },
+      {
+        "n": 4,
+        "user": "Возвращаюсь в секту и медитирую в пещере у водопада.",
+        "before": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 280/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 280 из 300; освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 320/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: освоено форм 5 из 6"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T02:02:04+03:00",
+            "machine": "circle",
+            "kind": "action",
+            "name": "cultivate",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "qi": "+40",
+              "reason": "Лу Чэнь остаётся в пещере у водопада и доводит медитацию до края — добирает последнюю нехватку ци."
+            },
+            "stage": "gathering"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "медитация (2)",
+        "answer": "Ты не встаёшь. Грохот воды ровный, как дыхание спящего, и ты идёшь в него глубже.\n\nПоследняя струя всё-таки подаётся — не силой, а тем, что ты перестаёшь её тянуть. Ци входит в даньтянь так, как вода входит в полную чашу: сперва не идёт, потом идёт через край, и край держит. Тепло поднимается по хребту, расходится по рёбрам, отдаётся в кончиках пальцев. Сосуда больше не нехватка — сосуд полон, даже с верхом: ци плещется в нём, ищешь ей места по всему телу, а места нет, и она ходит кругами, ища выхода.\n\nТы сидишь так, пока снаружи не темнеет — вода за стеной из белой делается серой, потом синей, потом в ней загорается луна, ещё не полная, но уже тяжёлая. Бок не болит вовсе. Пилюли Вана лежат нетронутыми в кошеле на камне — до них ещё будет дело, и не нынче.\n\nСтарейшина Мо Шуй всё так же стоит у стены воды, и теперь видно, что он не уходил ни на шаг.\n\n— Полно, — говорит он наконец, и это не вопрос. — Вижу: полно, аж через край. — Он подходит ближе, садится на соседний камень, кладёт сухие ладони на колени. — Только полная чаша без формы — что река без русла. Разольётся и уйдёт в землю. Шестой порыв ветра, Лу Чэнь. Не в ци он, я тебе говорил.\n\nОн поднимает два пальца, и в грохоте водопада ясно слышно, как между ними свистит воздух.\n\n— Пятый ты брал в ущелье, и взял чисто, не спорю. А шестой — он не про силу. Пятый бьёт, шестой — отпускает. Поймёшь разницу — назавтра придёшь ко мне с пустыми руками и полным даньтянем, и я скажу тебе то, что говорят перед прорывом. Не поймёшь — хоть десять лет сиди, ветер тебя слушаться не станет.\n\nОн поднимается, и его шаги тонут в шуме воды.\n\nНочь ещё длинна. Двор за верхними дворами пуст и залит лунным светом — самое время для шестого порыва. Или, может, сперва выспросить у старика, что он разумеет под «отпускает», — раньше, чем махать руками в темноте?",
+        "error": "",
+        "prompt": 9513,
+        "completion": 1012,
+        "cost": 0.003099498,
+        "fsm_tokens": 1630,
+        "ops": [
+          {
+            "at": "2026-11-23T02:02:01+03:00",
+            "op": "rejected",
+            "layer": "long",
+            "section": "school",
+            "key": "положение",
+            "value": "вернулся с возвращённым грузом и печатью Вана; в секте приняли без расспросов",
+            "source": "сцена 5, ход 4",
+            "why": "школа меняется только событием игры (/event school …), не словами в сцене",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T02:02:01+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "circle",
+            "key": "медитация",
+            "value": "пещера у водопада за верхними дворами секты, ветер и вода идут ровно",
+            "source": "сцена 5, ход 4"
+          },
+          {
+            "at": "2026-11-23T02:02:01+03:00",
+            "op": "rejected",
+            "layer": "working",
+            "section": "circle",
+            "key": "прогресс_ци",
+            "value": "до полного круга не хватает последней струи: ци встаёт у горловины и откатывается",
+            "source": "сцена 5, ход 4",
+            "why": "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T02:02:01+03:00",
+            "op": "add",
+            "layer": "short",
+            "section": "mission",
+            "key": "возвращение",
+            "value": "вернулся в секту Лазурного Облака, дело о караване закрыто",
+            "source": "сцена 5, ход 4"
+          },
+          {
+            "at": "2026-11-23T02:02:04+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "circle",
+            "key": "ци",
+            "value": "320 из 300",
+            "source": "автомат развития",
+            "old": "280 из 300"
+          }
+        ]
+      },
+      {
+        "n": 5,
+        "user": "Отрабатываю следующую форму «Девяти порывов ветра».",
+        "before": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 320/300, формы 5/6",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: освоено форм 5 из 6"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "ready",
+            "step": "ци и формы набраны",
+            "actor": "user",
+            "expected": "игрок решает начать прорыв («начинаю прорыв», /breakthrough); тогда Мастер — cultivation_transition(to=\"breakthrough\")"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T02:02:29+03:00",
+            "machine": "circle",
+            "kind": "action",
+            "name": "train_form",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "forms": "+1 → 6",
+              "form": "Шестой порыв ветра — «Девять порывов ветра»: не бьёт, а отпускает"
+            },
+            "stage": "gathering"
+          },
+          {
+            "at": "2026-11-23T02:02:29+03:00",
+            "machine": "circle",
+            "kind": "transition",
+            "name": "gathering → ready",
+            "by": "автомат развития",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "ready"
+            },
+            "stage": "ready"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [],
+        "label": "отработка формы (1)",
+        "answer": "Ты выходишь на двор, в ночной холод, и встаёшь между двух сосен, где ветер крутится в замкнутом углу.\n\nПятый порыв ты делаешь сразу, для разогрева: короткий вдох, шаг, ладонь режет воздух — и струя уходит вперёд, срезая с ветки хвою. Чисто. Раньше ты этим и заканчивал: бил до тех пор, пока не казалось, что крепко.\n\nШестого у тебя не получалось потому, что ты бил.\n\nТы пробуешь иначе: набираешь — и не выпускаешь. Держишь ветер в ладони, а он рвётся, как пёс с привязи, потому что весь твой прежний навык велит ему лететь. Ладонь дрожит. Хвоя шуршит по камням — ветер уходит по земле, слабо, вразброд. Не то.\n\nЕщё раз. Ещё. Луна поднимается выше, пальцы коченеют, ты сбиваешь дыхание и начинаешь заново.\n\nА потом — на исходе третьего часа — ты просто перестаёшь хотеть бить. Не вкладываешь в движение ничего, кроме внимания: отпускаешь, как отпускают из ладони птицу, не толкая её. И ветер идёт. Не вперёд, не в противника — вокруг. Он обтекает сосны с двух сторон и сходится за ними, и две ветки разом, без звука, склоняются и замирают.\n\nТы стоишь в тишине, которой в этом дворе не бывает: грохот водопада есть, а между сосен — тихо.\n\n— Вот, — говорит Мо Шуй от стены. Он стоял здесь всю ночь, ты не заметил как. — Пятый бьёт, шестой отпускает. Теперь у тебя в даньтяне полно, в руках — шесть порывов, а между ними — пустое место. В пустое место и войдёт твоё основание.\n\nОн подходит, кладёт тебе на плечо сухую ладонь — коротко, как ставят точку.\n\n— Слушай, что говорят перед прорывом. Прорыв — не подвиг. Ты пойдёшь вниз, в себя, туда, где ци гуще всего и где она тебя не любит: она там твоя ровно настолько, насколько ты сам ровен. Не рви. Кто рвёт — тот оставляет в себе дыру, и она потом свистит всю жизнь. И ещё: у Вана ты взял пилюли. Пилюли — не сила, пилюли — терпение. Они держат тебя, когда сам ты кончился. Больше двух за раз не бери, а лучше — две.\n\nОн смотрит тебе в глаза, и в лунном свете лицо у него совсем старое.\n\n— Готов? Я буду рядом. Дальше — твоя воля.\n\nРассвет ещё не встал; вода шумит; шесть порывов в руках и даньтянь полон через край. Начинаешь прорыв этой ночью — с пилюлями или на своём, на голом терпении?",
+        "error": "",
+        "prompt": 8507,
+        "completion": 990,
+        "cost": 0.002981124,
+        "fsm_tokens": 1544,
+        "ops": [
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "rejected",
+            "layer": "working",
+            "section": "circle",
+            "key": "ци",
+            "value": "полна через край, ходит кругами и ищет выхода; бок не болит",
+            "source": "сцена 5, ход 5",
+            "why": "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "circle",
+            "key": "форма_шестая",
+            "value": "Мо Шуй: шестой порыв не бьёт, а отпускает; пятый взят чисто в ущелье",
+            "source": "сцена 5, ход 5"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "rejected",
+            "layer": "working",
+            "section": "circle",
+            "key": "состояние",
+            "value": "ци полна, нужна шестая форма для прорыва (было: накопление ци)",
+            "source": "сцена 5, ход 5",
+            "why": "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "gear",
+            "key": "пилюли",
+            "value": "две пилюли собирания ци целы, лежат в кошеле на камне",
+            "source": "сцена 5, ход 5"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "имя",
+            "value": "старейшина Мо Шуй",
+            "source": "сцена 5, ход 5",
+            "char": "moshu"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "about",
+            "key": "роль",
+            "value": "наставник Лу Чэня в секте Лазурного Облака",
+            "source": "сцена 5, ход 5",
+            "char": "moshu"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "voice",
+            "key": "обращение",
+            "value": "к Лу Чэню по имени, на «ты»",
+            "source": "сцена 5, ход 5",
+            "char": "moshu"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "voice",
+            "key": "тон",
+            "value": "сухой, ровный, спокойный, без нажима",
+            "source": "сцена 5, ход 5",
+            "char": "moshu"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "manner",
+            "key": "речь",
+            "value": "кратко, притчами о полной чаше и реке без русла, в конце — указание",
+            "source": "сцена 5, ход 5",
+            "char": "moshu"
+          },
+          {
+            "at": "2026-11-23T02:02:26+03:00",
+            "op": "add",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "доволен: пятый порыв взят чисто, ждёт понимания шестого",
+            "source": "сцена 5, ход 5",
+            "char": "moshu"
+          },
+          {
+            "at": "2026-11-23T02:02:29+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "circle",
+            "key": "формы",
+            "value": "«Девять порывов ветра»: освоено 6, для прорыва нужно 6",
+            "source": "автомат развития",
+            "old": "«Девять порывов ветра»: освоено 5, для прорыва нужно 6"
+          },
+          {
+            "at": "2026-11-23T02:02:29+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "circle",
+            "key": "состояние",
+            "value": "готов к прорыву",
+            "source": "автомат развития",
+            "old": "накопление ци"
+          }
+        ]
+      },
+      {
+        "n": 6,
+        "user": "Начинаю прорыв на третью ступень. Принимаю одну пилюлю собирания ци.",
+        "before": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "ready",
+            "step": "ци и формы набраны",
+            "actor": "user",
+            "expected": "игрок решает начать прорыв («начинаю прорыв», /breakthrough); тогда Мастер — cultivation_transition(to=\"breakthrough\")"
+          }
+        },
+        "after": {
+          "mission": {
+            "stage": "done",
+            "index": 0,
+            "total": 0,
+            "step": "задание сдано, награда начислена",
+            "actor": "none",
+            "expected": "ничего: задание закрыто; дальше — новое задание или путь развития"
+          },
+          "circle": {
+            "state": "gathering",
+            "step": "накопление: ци 0/350, формы 6/7",
+            "actor": "assistant",
+            "expected": "набирать ци и формы: cultivate (+40 ци) или train_form (+1 форма), одно действие за ход, не в пути; не хватает: ци 0 из 350; освоено форм 6 из 7"
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-23T02:02:52+03:00",
+            "machine": "circle",
+            "kind": "transition",
+            "name": "ready → breakthrough",
+            "by": "Мастер",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "to": "breakthrough"
+            },
+            "stage": "breakthrough"
+          },
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "machine": "circle",
+            "kind": "action",
+            "name": "resolve_breakthrough",
+            "by": "Мастер (кости кода)",
+            "ok": true,
+            "applied": true,
+            "enforced": true,
+            "unmet": [],
+            "args": {
+              "pills": 1,
+              "roll": 11,
+              "bonus": 2,
+              "total": 13,
+              "dc": 12,
+              "passed": true
+            },
+            "stage": "advanced"
+          }
+        ],
+        "text_guard": [],
+        "guard": true,
+        "memory": [
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "what": "прорыв: Очищение ци, третья ступень",
+            "changes": [
+              "рабочая · круг «Очищение ци, вторая ступень» → архив circles/2.json",
+              "рабочая · новый круг «Очищение ци, третья ступень», ци 0 из 350",
+              "рабочая · перенесено: снаряжение",
+              "долговременная · особенности: отметка о прорыве"
+            ],
+            "unearned": false
+          }
+        ],
+        "label": "прорыв по решению игрока",
+        "answer": "Ты садишься в самый сухой угол двора, спиной к сосне, и Мо Шуй становится у тебя за плечом — не касаясь, просто есть.\n\nПилюля холодная и горькая, как растёртая кора. Она не даёт тепла; она даёт время: горечь расходится по горлу и оседает в животе тяжело, будто ты проглотил камешек, и камешек этот держит.\n\nТы закрываешь глаза и идёшь вниз.\n\nЭто не похоже на медитацию. Медитация — это когда ты сидишь на берегу и смотришь на воду. А тут вода поднимается и смотрит на тебя. Ци в даньтяне не хочет улежаться: она вскипает, лезет в меридианы, и меридианы узки, и каждый поворот отдаётся болью под лопаткой, в висках, в шраме на боку — там, где прошёл крюк-меч, тонко тянет, будто рана открылась заново. Где-то далеко шумит водопад; где-то близко стучит сердце, и стук становится неровным, спотыкается, и ты понимаешь: вот оно, узкое место. Тут тебя и будут рвать.\n\nТы держишься за холод в животе. Он — как палец, которым ты держишься за край.\n\nВолна идёт — и ты не толкаешь её обратно. Отпускаешь. Как птицу из ладони. Шестой порыв, только не в руках, а внутри.\n\nТебя поднимает и швыряет куда-то в сторону — ты валишься на бок в траву, и откуда-то очень издалека слышишь своё дыхание, которое не дышит; потом слух возвращается первым, и с ним — вкус крови на губах, и боль в боку, тонкая, как волос.\n\nА потом — тишина. Не пустая: полная.\n\nТы лежишь в холодной траве, и мир вокруг стал больше и ближе одновременно: слышно, как под корой сосны ходит сок, как в мокром мху заходится сердце какой-то мелкой твари, как в двух шагах от тебя дышит старик и терпит, чтобы не подойти раньше времени.\n\nМо Шуй всё-таки подходит. Присаживается, двумя пальцами поднимает тебе веко, смотрит.\n\n— Прошло, — говорит он. — Не рвал, отпустил. Хорошо. — И, помолчав: — Третья ступень легла. Даньтянь у тебя теперь не тот, что был; он взял больше, чем ты просил, и опять пустой, как новый кувшин. Наливай понемногу. Ищи седьмой порыв: в нём ветер уже не бьёт и не отпускает — он ждёт. Это последний, что тебе нужен перед Основанием.\n\nОн помогает тебе сесть. Небо над соснами серое, рассвет.\n\nПолный, пустой, с ноющей полосой в боку и незнакомой лёгкостью в костях ты сидишь на траве. Что дальше — отлежаться и с рассветом сесть за ци, разомять седьмой порыв, или сперва спуститься к трапезной, где к утру варят похлёбку?",
+        "error": "",
+        "prompt": 8391,
+        "completion": 1796,
+        "cost": 0.0043694219999999995,
+        "fsm_tokens": 1485,
+        "ops": [
+          {
+            "at": "2026-11-23T02:02:49+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "circle",
+            "key": "форма_шестая",
+            "value": "освоена: ветер не бьёт, а отпускает — идёт вокруг сосен; Мо Шуй подтвердил",
+            "source": "сцена 5, ход 6",
+            "old": "Мо Шуй: шестой порыв не бьёт, а отпускает; пятый взят чисто в ущелье"
+          },
+          {
+            "at": "2026-11-23T02:02:49+03:00",
+            "op": "rejected",
+            "layer": "working",
+            "section": "circle",
+            "key": "состояние",
+            "value": "начат прорыв на третью ступень (было: готов к прорыву)",
+            "source": "сцена 5, ход 6",
+            "why": "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T02:02:49+03:00",
+            "op": "rejected",
+            "layer": "working",
+            "section": "circle",
+            "key": "прорыв",
+            "value": "начат во дворе у сосен ночью, с одной пилюлей собирания ци",
+            "source": "сцена 5, ход 6",
+            "why": "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)",
+            "writer": "летописец"
+          },
+          {
+            "at": "2026-11-23T02:02:49+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "gear",
+            "key": "пилюли",
+            "value": "осталась одна пилюля собирания ци; вторую принял перед прорывом (было: две)",
+            "source": "сцена 5, ход 6",
+            "old": "две пилюли собирания ци целы, лежат в кошеле на камне"
+          },
+          {
+            "at": "2026-11-23T02:02:49+03:00",
+            "op": "update",
+            "layer": "cast",
+            "section": "attitude",
+            "key": "luchen",
+            "value": "доволен: шестой порыв взят, ждёт прорыва (было: ждёт понимания шестого)",
+            "source": "сцена 5, ход 6",
+            "old": "доволен: пятый порыв взят чисто, ждёт понимания шестого",
+            "char": "moshu"
+          },
+          {
+            "at": "2026-11-23T02:02:52+03:00",
+            "op": "update",
+            "layer": "working",
+            "section": "circle",
+            "key": "состояние",
+            "value": "прорыв",
+            "source": "автомат развития",
+            "old": "готов к прорыву"
+          },
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "op": "add",
+            "layer": "long",
+            "section": "traits",
+            "key": "прорыв_очищение_3",
+            "value": "взял Очищение ци, третья ступень (2026-11-23)",
+            "source": "автомат развития (прорыв)"
+          },
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "circle",
+            "key": "круг",
+            "value": "Очищение ци, третья ступень",
+            "source": "автомат развития"
+          },
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "circle",
+            "key": "ци",
+            "value": "0 из 350",
+            "source": "автомат развития"
+          },
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "circle",
+            "key": "формы",
+            "value": "«Девять порывов ветра»: освоено 6, для прорыва нужно 7",
+            "source": "автомат развития"
+          },
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "circle",
+            "key": "условие_прорыва",
+            "value": "350 ци и 7 форм «Девять порывов ветра»",
+            "source": "автомат развития"
+          },
+          {
+            "at": "2026-11-23T02:02:54+03:00",
+            "op": "add",
+            "layer": "working",
+            "section": "circle",
+            "key": "состояние",
+            "value": "накопление ци",
+            "source": "автомат развития"
+          }
+        ]
+      }
+    ],
+    "pauses": [
+      {
+        "stage": "briefing",
+        "before": {
+          "stage": "briefing",
+          "index": 2,
+          "total": 2,
+          "step": "утверждение маршрута (версия 1)",
+          "actor": "user",
+          "expected": "утвердить маршрут («маршрут утверждаю», «выступаем», /approve) или попросить правки"
+        },
+        "expect": {
+          "stage": "briefing",
+          "index": 2,
+          "total": 2,
+          "step": "утверждение маршрута (версия 1)",
+          "actor": "user",
+          "expected": "утвердить маршрут («маршрут утверждаю», «выступаем», /approve) или попросить правки"
+        },
+        "paused": true,
+        "forced_pause": false,
+        "work_on_pause": 0,
+        "resumed": true,
+        "resumed_to": "briefing",
+        "continued": true,
+        "want": "не составлять маршрут заново (версия 1) и попросить утвердить",
+        "kept": true,
+        "reexplain": false,
+        "pause_answer": "Управляющий Ван понимающе склоняет голову и придавливает лист с маршрутом тяжёлой чашкой, чтобы ветер из окна не унёс чернила.\n\n— «Ступайте, господин Лу. Дело не горит быстрее полнолуния», — говорит он и снова садится к своим описям.\n\nТы выходишь во двор. Пыль лениво кружит над колодцем, где-то за стеной переругиваются возчики, а над рекой висит серое, нерешительное утро. Сборы отложены — маршрут лежит неподписанным, Ван ждёт твоего слова, дорога ждёт тебя.\n\nКогда вернёшься — скажи «продолжаем», и мы снимем привал ровно с этого места: утверждение маршрута.",
+        "resume_answer": "Привал у тракта кончился — ты поднялся, отряхнул пыль с дорожного халата и вернулся в управу Речной Переправы. Управляющий Ван ждёт тебя всё там же, за столом, заваленным путевыми списками; свеча оплыла до самого блюдца, под глазами у него тени в три пальца.\n\n— Господин Лу, — говорит он, поднимая голову. — Значит, план. Третью ночь не сплю, а всё жду, что вы скажете дело. Говорите, а я погляжу, по рукам ли нам будет.\n\nОн разглаживает лист и слушает, как ты излагаешь путь:\n\n**Первое.** Сборы здесь, в Речной Переправе: расспросить самого Вана и торговцев — сколько было возчиков, что за груз и по какой описи, каким путём караван вышел и в какой день.\n**Второе.** Дорога к Ущелью Тысячи Ветров: сыскать след каравана на тракте и в самом ущелье, понять, где и отчего он сгинул.\n**Третье.** Схватка с теми, кто взял караван, и возвращение груза сюда, в Переправу.\n\nА примут работу, по его словам, по трём условиям: травы — целыми и по описи в руках у Вана; о каждом из четверых возчиков — верная весть: живыми найдены или назван тот, кто их погубил; и всё это — до полнолуния, в срок, что дан был при найме.\n\nВан проводит пальцем по строчкам, потом поднимает на тебя усталые глаза.\n\n— Уговор такой и был. Дело ваше, господин Лу, — только слово ваше: **утверждаете маршрут, и выступаем?** Или что поправить велите — скажите, покуда чернила не высохли.",
+        "resume_events": [
+          "Мастер: задание: переход paused → briefing — «Игрок сказал «продолжаем» — снимаем привал, возвращаемся к с…» → ✅ применено"
+        ]
+      },
+      {
+        "stage": "journey",
+        "before": {
+          "stage": "journey",
+          "index": 2,
+          "total": 3,
+          "step": "этап 2 из 3 — «Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал»",
+          "actor": "assistant",
+          "expected": "разыграть этап 2, показать, что вышло, и сохранить через complete_step(step=2)"
+        },
+        "expect": {
+          "stage": "journey",
+          "index": 2,
+          "total": 3,
+          "step": "этап 2 из 3 — «Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал»",
+          "actor": "assistant",
+          "expected": "разыграть этап 2, показать, что вышло, и сохранить через complete_step(step=2)"
+        },
+        "paused": true,
+        "forced_pause": false,
+        "work_on_pause": 0,
+        "resumed": true,
+        "resumed_to": "journey",
+        "continued": true,
+        "want": "этап 2: пройти его",
+        "kept": true,
+        "reexplain": false,
+        "pause_answer": "Ты велишь остановиться — и Речная Переправа принимает тебя на ночлег.\n\nВан без лишних слов отдаёт тебе каморку при управлении: циновка, низкий стол, плошка с маслом, за стеной сонно скрипит колодезный ворот. За окном камыши шуршат, вода бьётся о сваи, где-то далеко в темноте перекликаются ночные птицы. Торговец Чжоу, запирая лавку, кланяется тебе вслед и на всякий случай ещё раз повторяет: «Двое в красном, господин Лу. Красное-то нынче дешевле не стало».\n\nДо полнолуния ещё пять дней, и ночь эта — твоя. Успеешь и отдохнуть, и поработать с ци, прежде чем выйти на тракт.\n\nСкажи, когда тронемся — и с чего начнёшь эту ночь.",
+        "resume_answer": "Ты оставляешь привал и коня в Сухом Броде — дальше верхом не пройти, только пешком по камням, — и уходишь в ущелье с первым серым светом.\n\nЮжный тракт выдаёт тебя сразу: колеи залиты водой, обочины разъезжены, и всякое твоё «вот здесь телега приминала траву» рассыпается через полсотни шагов. Ты идёшь по ложной колее почти до полудня, пока не упираешься в тупик — сухое русло, забитое плавником, и ни следа, ни обрывка. Полдня как водой смыло. Ты садишься на камень, выравниваешь дыхание, как учил старейшина Мо Шуй: не глазами искать, а слушать. И тогда слышишь — вода в ущелье шумит не везде одинаково. Там, где она шумит глуше, стоит запруда из камней, а за ней — сухой ручей, и по его берегу тянется примятая трава.\n\nК вечеру ты выходишь к горлу ущелья — и сразу понимаешь, что караван кончился здесь.\n\nУзкий проход между двумя скалами. Разрубленная упряжь, ремни разошлись под топором, а не разорвались. Обрывок синей рубахи, пропитанный кровью и уже затвердевший. Травы рассыпаны по камням — их топтали, тащили, часть втоптали в грязь. А сама телега сбита с дороги и лежит в промоине, днищем кверху, и в ней ещё остались тюки — те, что не успели взять. Кто-то работал быстро и знал, что брать.\n\nСверху, со скального карниза, доносится короткий пересвист. Двое в красных колпаках перекликаются над твоей головой, и один показывает рукой вглубь ущелья — мол, туда несут. Ты стоишь открыто, на дне горла, и если они обернутся вниз, то увидят тебя как на ладони.\n\nПрежде чем идти дальше, решай, Лу Чэнь: подняться по осыпи к карнизу и взять дозорных тихо, один на один, — или пропустить их мимо, обойти по дну и идти по следу тюков глубже в ущелье, где стоит их лагерь?",
+        "resume_events": [
+          "Мастер: задание: переход paused → journey — «Игрок просит продолжать путь: снять привал и вернуться на до…» → ✅ применено",
+          "Мастер: complete_step(этап 2) → ✅ применено"
+        ]
+      },
+      {
+        "stage": "report",
+        "before": {
+          "stage": "report",
+          "index": 2,
+          "total": 3,
+          "step": "условие 2 из 3 — «Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил»",
+          "actor": "assistant",
+          "expected": "заказчик проверяет условие 2: record_check(check=2)"
+        },
+        "expect": {
+          "stage": "report",
+          "index": 2,
+          "total": 3,
+          "step": "условие 2 из 3 — «Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил»",
+          "actor": "assistant",
+          "expected": "заказчик проверяет условие 2: record_check(check=2)"
+        },
+        "paused": true,
+        "forced_pause": false,
+        "work_on_pause": 0,
+        "resumed": true,
+        "resumed_to": "report",
+        "continued": true,
+        "want": "условие 2: проверить его",
+        "kept": true,
+        "reexplain": false,
+        "pause_answer": "Ван понимает без слов — он слишком долго живёт на свете, чтобы не заметить, как ты держишься за бок.\n\n— Писец, проводи господина Лу в боковую комнату. И позови цирюльника, что шьёт раны, — не того, что стрижёт. — Он оборачивается к тебе, и в голосе впервые за всё утро слышится что-то живое. — Господин Лу, лист я не потеряю. Двое суток у меня есть до полнолуния, а вам надо, чтобы бок затянуло раньше, чем вы снова сядете на коня.\n\nКомната тесная, но чистая: топчан, кувшин воды, за окном — шум переправы и крик перевозчика. Цирюльник, сухой старик с прокопчёнными пальцами, разматывает твою рубаху, хмыкает, промывает рассечённый бок отваром, от которого щиплет до слёз, и стягивает края ниткой. Потом, не спрашивая, ставит на стол плошку с горячей кашей и уходит, буркнув: «До вечера не вставать».\n\nЗа окном двор: Линь То сидит на ступенях, обхватив колени, и смотрит в никуда — ему ещё нести весть домой; Ма Жуя уложили в тени, над ним хлопочет служанка.\n\nТы один. Бок горит, и от этой боли ци в тебе ходит неровно, толчками, как вода в затоне. До полнолуния — двое суток, вожака с крюк-мечами где-то в ущелье, и лист с отчётом лежит у Вана недописанным.\n\nТишина в комнате такая, что слышно, как шумит переправа. Есть время подышать и поработать — или просто полежать и дать телу зажить.\n\nЧто делаешь, Лу Чэнь?",
+        "resume_answer": "Вечер в боковой комнате у Вана тянется медленно, как смола. За окном уже сине, во дворе зажгли фонари, и в их свете видно, как писец макает кисть и ждёт.\n\nВан стоит над листом, придавив его ладонью, чтобы не свернулся. Перед ним — Линь То с распухшим лицом и Ма Жуй, которому подставили табурет, потому что стоять он ещё не может.\n\n— Старшина Дуань Лао, — говорит Ван ровно, и писец выводит: «убит». — Племянник его, Дуань Сяо. — «убит». — Ма Жуй. — «жив». — Линь То. — «жив».\n\nОн поднимает глаза.\n\n— Кто их погубил, господин Лу? Не «лихие люди», не «разбойники с дороги». Имена или хотя бы знамя.\n\nТы говоришь. Писец записывает: двое дозорных в красных колпаках на карнизе, трое у костра, вожак с двумя крюк-мечами — люди Кровавой Луны. Ван выслушивает до конца, не перебивая, и только когда писец ставит точку, трогает пальцем строку.\n\n— Стало быть, судьба возчиков установлена, — тихо говорит он. — Двое мертвы, двое живы, и убийцы названы. Это я приму.\n\nМа Жуй, держась за бок, поднимает голову и хрипит шёпотом:\n\n— Господин управляющий… вожак-то ушёл. Хромая ушёл, вверх по ущелью. Он меня не убил — значит, вернётся.\n\nВан не отвечает старику. Он берёт лист за угол, подвигает к себе ближе и смотрит на последнюю неписаную строку — ту, где стоит срок, данный при найме. За окном где-то далеко бьёт колокол переправы: до полнолуния две ночи, не больше.\n\n— Тут у меня осталась одна строка, господин Лу, — говорит Ван, и голос у него делается ещё тише. — И прежде чем я её напишу, скажите мне прямо, без чинов: вожак жив и на воле. Мне записать, что дело закрыто, — или что дорога через ущелье ещё не чиста и Переправе ждать беды?\n\nПисец держит кисть над листом и не дышит.\n\nЧто ты ответишь управляющему?",
+        "resume_events": [
+          "Мастер: задание: переход paused → report — «Лу Чэнь просит продолжать: привал снят, заказчик возвращаетс…» → ✅ применено",
+          "Мастер: record_check(условие 2, выполнено) → ✅ применено"
+        ]
+      }
+    ],
+    "notes": [],
+    "final_mission": {
+      "format": 1,
+      "mission_id": "1",
+      "title": "Пропавший караван",
+      "stage": "done",
+      "paused_from": null,
+      "plan": {
+        "version": 1,
+        "steps": [
+          "Сборы в Речной Переправе: расспросить управляющего Вана и торговцев о караване — сколько было людей, какой груз, каким путём и когда он вышел",
+          "Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал",
+          "Схватка с теми, кто взял караван, и возвращение груза в Речную Переправу"
+        ],
+        "checks": [
+          "Груз лекарственных трав возвращён управляющему Вану целым и по описи",
+          "Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил",
+          "Дело закрыто до полнолуния — в срок, что дан был при найме"
+        ],
+        "saved_at": "2026-11-23T01:50:23+03:00"
+      },
+      "approved_version": 1,
+      "approved_at": "2026-11-23T01:51:00+03:00",
+      "approved_by": "игрок (сообщение)",
+      "round": 1,
+      "results": {
+        "1": {
+          "text": "В Переправе выведано всё: караван — четверо возчиков (старшина Дуань Лао с племянником Дуань Сяо, старик Ма Жуй, молодой Линь То), 14 тюков лекарственных трав по описи, три короба белого корня; вышел на рассвете три дня назад южным трактом, у Сухого Брода свернул в Ущелье Тысячи Ветров. Торговец Чжоу видел перед выходом двоих в красном, что выспрашивали дорогу в ущелье.",
+          "at": "2026-11-23T01:51:18+03:00",
+          "round": 1
+        },
+        "2": {
+          "text": "След на тракте смыло дождём: Лу Чэнь полдня шёл по ложной колее и потерял время. К вечеру у сухого ручья он всё же нашёл место гибели каравана — узкое горло ущелья: разрубленная упряжь, обрывок синей рубахи в крови, рассыпанные травы, а телега с остатками тюков сброшена в промоину. Наверху, на скальном карнизе, перекликаются дозорные в красных колпаках — караван взят здесь, груз понесли глубже в ущелье.",
+          "at": "2026-11-23T01:53:08+03:00",
+          "round": 1
+        },
+        "3": {
+          "text": "Лу Чэнь обошёл дозорных по дну и подкрался к лагерю: трое в красном у костра, груз под скальным навесом, двое возчиков связаны — молодой Линь То и старик Ма Жуй, а старшина Дуань Лао и его племянник Дуань Сяо убиты в горле ущелья. Пленников он освободил тихо, но схватка пошла худо: вожак с крюк-мечом рассёк Лу Чэню бок, Ма Жуй принял удар на себя, и лишь «пятым порывом ветра» Лу Чэнь сбил вожака с ног — тот ушёл раненым вверх по ущелью. Травы, все четырнадцать тюков и три короба белого корня возвращены в Речную Переправу; Лу Чэнь с рассечённым боком, Ма Жуй ранен, Линь То цел.",
+          "at": "2026-11-23T01:55:10+03:00",
+          "round": 1
+        }
+      },
+      "checks": {
+        "1": {
+          "passed": true,
+          "evidence": "Во дворе управляющего Вана тюки пересчитаны по описи дважды: четырнадцать тюков трав и три короба белого корня, печати на коробах целы.",
+          "at": "2026-11-23T01:55:47+03:00"
+        },
+        "2": {
+          "passed": true,
+          "evidence": "Линь То и Ма Жуй живы и стоят перед Ваном; Дуань Лао и Дуань Сяо убиты в горле ущелья; названы те, кто их погубил, — люди Кровавой Луны: двое дозорных на карнизе, трое в лагере и вожак с крюк-мечами.",
+          "at": "2026-11-23T01:58:38+03:00"
+        },
+        "3": {
+          "passed": true,
+          "evidence": "Груз возвращён и пересчитан, судьба всех четверых возчиков установлена — всё сделано за две ночи до полнолуния, в срок, что был дан при найме. Лу Чэнь не скрыл, что вожак жив.",
+          "at": "2026-11-23T01:59:04+03:00"
+        }
+      },
+      "final": "Караван с лекарственными травами найден в Ущелье Тысячи Ветров и возвращён в Речную Переправу: четырнадцать тюков трав и три короба белого корня, печати целы. Из четверых возчиков Линь То и Ма Жуй спасены живыми, Дуань Лао и Дуань Сяо убиты в горле ущелья. Убийцы названы — люди Кровавой Луны: двое дозорных на карнизе, трое в лагере и вожак с двумя крюк-мечами, который ушёл раненым вверх по ущелью. Дело закрыто за две ночи до полнолуния, в срок, данный при найме. Управляющий Ван записал на листе и то, чего Лу Чэнь не скрыл: вожак жив, и дорога через ущелье ещё не чиста.",
+      "rewarded": true,
+      "journal": [
+        {
+          "at": "2026-11-23T01:50:23+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "save_route",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "steps": [
+              "Сборы в Речной Переправе: расспросить управляющего Вана и торговцев о караване — сколько было людей, какой груз, каким путём и когда он вышел",
+              "Дорога к Ущелью Тысячи Ветров: найти след каравана на тракте и в самом ущелье, выяснить, где и отчего он пропал",
+              "Схватка с теми, кто взял караван, и возвращение груза в Речную Переправу"
+            ],
+            "checks": [
+              "Груз лекарственных трав возвращён управляющему Вану целым и по описи",
+              "Установлена судьба возчиков каравана: найдены живыми или названы те, кто их погубил",
+              "Дело закрыто до полнолуния — в срок, что дан был при найме"
+            ]
+          },
+          "stage": "briefing"
+        },
+        {
+          "at": "2026-11-23T01:50:41+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "briefing → paused",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "paused",
+            "reason": "Игрок отходит и просит отложить сборы до его возвращения"
+          },
+          "stage": "paused"
+        },
+        {
+          "at": "2026-11-23T01:50:54+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "paused → briefing",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "briefing",
+            "reason": "Игрок сказал «продолжаем» — снимаем привал, возвращаемся к сборам и утверждению маршрута."
+          },
+          "stage": "briefing"
+        },
+        {
+          "at": "2026-11-23T01:51:00+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "approve",
+          "by": "игрок (сообщение)",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "version": 1
+          },
+          "stage": "briefing"
+        },
+        {
+          "at": "2026-11-23T01:51:08+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "briefing → journey",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "journey",
+            "reason": "Маршрут утверждён игроком — выступаем из Речной Переправы."
+          },
+          "stage": "journey"
+        },
+        {
+          "at": "2026-11-23T01:51:18+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "complete_step",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "step": 1,
+            "result": "В Переправе выведано всё: караван — четверо возчиков (старшина Дуань Лао с племянником Дуань Сяо, старик Ма Жуй, молодой Линь То), 14 тюков лекарственных трав по описи, три короба белого корня; вышел …"
+          },
+          "stage": "journey"
+        },
+        {
+          "at": "2026-11-23T01:52:42+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "journey → paused",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "paused",
+            "reason": "Герой остановился на привал в Речной Переправе и вернётся позже."
+          },
+          "stage": "paused"
+        },
+        {
+          "at": "2026-11-23T01:52:57+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "paused → journey",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "journey",
+            "reason": "Игрок просит продолжать путь: снять привал и вернуться на дорогу к Ущелью Тысячи Ветров"
+          },
+          "stage": "journey"
+        },
+        {
+          "at": "2026-11-23T01:53:08+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "complete_step",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "step": 2,
+            "result": "След на тракте смыло дождём: Лу Чэнь полдня шёл по ложной колее и потерял время. К вечеру у сухого ручья он всё же нашёл место гибели каравана — узкое горло ущелья: разрубленная упряжь, обрывок синей …"
+          },
+          "stage": "journey"
+        },
+        {
+          "at": "2026-11-23T01:55:10+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "complete_step",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "step": 3,
+            "result": "Лу Чэнь обошёл дозорных по дну и подкрался к лагерю: трое в красном у костра, груз под скальным навесом, двое возчиков связаны — молодой Линь То и старик Ма Жуй, а старшина Дуань Лао и его племянник Д…"
+          },
+          "stage": "journey"
+        },
+        {
+          "at": "2026-11-23T01:55:13+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "journey → report",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "report",
+            "reason": "Все этапы пути пройдены, груз и возчики доставлены в Речную Переправу — Лу Чэнь идёт к управляющему Вану с отчётом"
+          },
+          "stage": "report"
+        },
+        {
+          "at": "2026-11-23T01:55:47+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "record_check",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "check": 1,
+            "passed": true,
+            "evidence": "Во дворе управляющего Вана тюки пересчитаны по описи дважды: четырнадцать тюков трав и три короба белого корня, печати на коробах целы."
+          },
+          "stage": "report"
+        },
+        {
+          "at": "2026-11-23T01:56:10+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "report → paused",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "paused",
+            "reason": "Лу Чэнь просит передышки: раненый бок надо перевязать, с отчётом можно подождать"
+          },
+          "stage": "paused"
+        },
+        {
+          "at": "2026-11-23T01:58:35+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "paused → report",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "report",
+            "reason": "Лу Чэнь просит продолжать: привал снят, заказчик возвращается к проверке дела"
+          },
+          "stage": "report"
+        },
+        {
+          "at": "2026-11-23T01:58:38+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "record_check",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "check": 2,
+            "passed": true,
+            "evidence": "Линь То и Ма Жуй живы и стоят перед Ваном; Дуань Лао и Дуань Сяо убиты в горле ущелья; названы те, кто их погубил, — люди Кровавой Луны: двое дозорных на карнизе, трое в лагере и вожак с крюк-мечами."
+          },
+          "stage": "report"
+        },
+        {
+          "at": "2026-11-23T01:59:04+03:00",
+          "machine": "mission",
+          "kind": "action",
+          "name": "record_check",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "check": 3,
+            "passed": true,
+            "evidence": "Груз возвращён и пересчитан, судьба всех четверых возчиков установлена — всё сделано за две ночи до полнолуния, в срок, что был дан при найме. Лу Чэнь не скрыл, что вожак жив."
+          },
+          "stage": "report"
+        },
+        {
+          "at": "2026-11-23T02:01:12+03:00",
+          "machine": "mission",
+          "kind": "transition",
+          "name": "report → done",
+          "by": "Мастер",
+          "ok": true,
+          "applied": true,
+          "enforced": true,
+          "unmet": [],
+          "args": {
+            "to": "done",
+            "reason": "Все три условия дела проверены и приняты заказчиком: груз возвращён по описи, судьба возчиков установлена, дело закрыто в срок до полнолуния.",
+            "final": "Караван с лекарственными травами найден в Ущелье Тысячи Ветров и возвращён в Речную Переправу: четырнадцать тюков трав и три короба белого корня, печати целы. Из четверых возчиков Линь То и Ма Жуй спасены живыми, Дуань Лао и Дуань Сяо убиты в горле ущелья. Убийцы названы — люди Кровавой Луны: двое дозорных на карнизе, трое в лагере и вожак с двумя крюк-мечами, который ушёл раненым вверх по ущелью. Дело закрыто за две ночи до полнолуния, в срок, данный при найме. Управляющий Ван записал на листе и то, чего Лу Чэнь не скрыл: вожак жив, и дорога через ущелье ещё не чиста."
+          },
+          "stage": "done"
+        }
+      ],
+      "created_at": "2026-11-23T01:50:15+03:00",
+      "updated_at": "2026-11-23T01:57:19+03:00"
+    },
+    "final_circle": {
+      "format": 1,
+      "circle_id": "3",
+      "realm": 1,
+      "stage": 3,
+      "state": "gathering",
+      "qi": 0,
+      "forms": 6,
+      "technique": "«Девять порывов ветра»",
+      "attempts": [],
+      "journal": [],
+      "created_at": "2026-11-23T02:02:54+03:00"
+    },
+    "circles": [
+      {
+        "id": "3",
+        "title": "Очищение ци, третья ступень",
+        "status": "active",
+        "fields": 8
+      },
+      {
+        "id": "1",
+        "title": "Текущий круг",
+        "status": "passed",
+        "fields": 3
+      },
+      {
+        "id": "2",
+        "title": "Очищение ци, вторая ступень",
+        "status": "passed",
+        "fields": 10
+      }
+    ],
+    "start": {
+      "qi": 180,
+      "forms": 5,
+      "circle": "Очищение ци, вторая ступень"
+    },
+    "cult_start": {
+      "qi": 240,
+      "state": "gathering"
+    },
+    "checkpoints": [
+      "briefing",
+      "journey",
+      "report",
+      "done"
+    ],
+    "breakthrough": {
+      "events": [
+        "Мастер: путь развития: переход ready → breakthrough → ✅ применено",
+        "Мастер (кости кода): resolve_breakthrough: d20 11 + 2 = 13 против 12 → удача → ✅ применено"
+      ],
+      "attempts": [
+        {
+          "id": "3",
+          "title": "Очищение ци, третья ступень",
+          "status": "active",
+          "fields": 8
+        },
+        {
+          "id": "1",
+          "title": "Текущий круг",
+          "status": "passed",
+          "fields": 3
+        },
+        {
+          "id": "2",
+          "title": "Очищение ци, вторая ступень",
+          "status": "passed",
+          "fields": 10
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "at": "2026-11-23T02:01:12+03:00",
+        "what": "задание «Пропавший караван» сдано",
+        "changes": [
+          "рабочая · ци +60 (через автомат развития)",
+          "рабочая · снаряжение: две пилюли собирания ци и 30 лянов серебра",
+          "краткосрочная · задание закрыто; карточка уйдёт в архив со следующим заданием"
+        ],
+        "unearned": false
+      },
+      {
+        "at": "2026-11-23T02:02:54+03:00",
+        "what": "прорыв: Очищение ци, третья ступень",
+        "changes": [
+          "рабочая · круг «Очищение ци, вторая ступень» → архив circles/2.json",
+          "рабочая · новый круг «Очищение ци, третья ступень», ци 0 из 350",
+          "рабочая · перенесено: снаряжение",
+          "долговременная · особенности: отметка о прорыве"
+        ],
+        "unearned": false
+      }
+    ],
+    "memory": {
+      "school": {
+        "школа": "Секта Лазурного Облака",
+        "наставник": "старейшина Мо Шуй"
+      },
+      "nature": {
+        "клятва": "никогда не поднимать меч на безоружного",
+        "характер": "упрямый, лжи не терпит"
+      },
+      "traits": {
+        "корень_духа": "двойной: ветер и вода",
+        "прорыв_очищение_3": "взял Очищение ци, третья ступень (2026-11-23)"
+      },
+      "bonds": {
+        "кровный_враг": "Ци Ху из секты Кровавой Луны",
+        "долг_ма_жуй": "старик Ма Жуй принял удар, что шёл Лу Чэню в горло"
+      },
+      "circle": {
+        "круг": "Очищение ци, третья ступень",
+        "ци": "0 из 350",
+        "формы": "«Девять порывов ветра»: освоено 6, для прорыва нужно 7",
+        "условие_прорыва": "350 ци и 7 форм «Девять порывов ветра»",
+        "состояние": "накопление ци"
+      },
+      "gear": {
+        "конь": "оставлен в Сухом Броде, дальше пешком",
+        "награда_1": "получены от Вана: 30 лянов серебра и две пилюли собирания ци (было: обещаны)",
+        "пилюли": "осталась одна пилюля собирания ци; вторую принял перед прорывом (было: две)"
+      },
+      "mission": {
+        "заказчик": "управляющий Ван из города Речная Переправа",
+        "цель": "найти караван с лекарственными травами и вернуть груз",
+        "место": "Ущелье Тысячи Ветров",
+        "срок": "до полнолуния осталось двое суток (было: через пять дней)",
+        "награда": "две пилюли собирания ци и 30 лянов серебра",
+        "возчики": "{\"set\": {\"возчики\": \"четверо: старшина Дуань Лао, племянник Дуань Сяо, старик Ма Жуй, новичок Линь То\"}}",
+        "груз": "{\"set\": {\"груз\": \"четырнадцать тюков трав по описи и три короба белого корня\"}}",
+        "план": "сборы в Переправе, след в Ущелье Тысячи Ветров, схватка и возврат груза",
+        "условия_приёмки": "травы по описи у Вана, весть о каждом возчике, срок до полнолуния",
+        "улики": "{\"set\": {\"улики\": \"двое в красных колпаках искали дорогу в ущелье без дозорных; на том берегу к каравану пристал человек в плаще\"}}",
+        "улика_ущелье": "горло ущелья: разрубленная упряжь, кровь на синей рубахе, травы растоптаны; часть тюков в опрокинутой телеге",
+        "улика_колпаки": "двое в красных колпаках на карнизе показывают вглубь ущелья — груз унесли туда",
+        "пленники": "Линь То с разбитым лицом и Ма Жуй освобождены из верёвок",
+        "возчики_итог": "Дуань Лао и Дуань Сяо погибли в горле ущелья; Линь То и Ма Жуй живы",
+        "груз_найден": "четырнадцать тюков и три короба белого корня в лагере под навесом",
+        "вожак": "высокий, с двумя крюк-мечами, ранен, ушёл вверх по ущелью хромая",
+        "виновники": "Кровавая Луна: двое дозорных на карнизе, трое в лагере, вожак с крюк-мечами",
+        "доклад_вану": "названы все возчики и убийцы; писец записал: «убит», «жив», «ранен»",
+        "ход_дела": "дело закрыто: Ван принял доклад, поставил печать, выдал награду",
+        "отчёт_вана": "Ван принял доклад: двое мертвы, двое живы, убийцы названы; осталась строка о сроке",
+        "угроза_вожака": "Ма Жуй предупредил Вана: раненый вожак ушёл хромая вверх по ущелью и вернётся",
+        "участь_возчиков": "Линь То оставлен у Вана до выздоровления, Ма Жуй отлеживается у Вана при цирюльнике",
+        "доклад_вана": "Ван принял доклад: двое мертвы, двое живы, убийцы названы; строка о сроке дописана и заверена печатью",
+        "возвращение": "вернулся в секту Лазурного Облака, дело о караване закрыто"
+      }
+    }
+  },
+  "requests": {
+    "main": {
+      "requests": 58,
+      "retries": 6,
+      "failed": 0
+    },
+    "helper": null
+  }
+}

@@ -1,0 +1,1273 @@
+{
+  "model": "—",
+  "helper_model": "—",
+  "stamp": "20261123_022827",
+  "per_turn": 1,
+  "samples": 0,
+  "dir": "—",
+  "matrix": {
+    "rows": [
+      {
+        "fixture": "briefing_empty",
+        "title": "сборы, маршрута нет",
+        "stage": "briefing",
+        "targets": {
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "маршрут не составлен (save_route)"
+            ]
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → report нет в таблице: нельзя перепрыгнуть journey. Отсюда можно: journey, paused"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этапа 1 нет в маршруте (этапов 0)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этапа 2 нет в маршруте (этапов 0)"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "условия 1 нет в задании (условий 0)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "briefing_draft",
+        "title": "сборы, маршрут не утверждён",
+        "stage": "briefing",
+        "targets": {
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "маршрут версии 1 не утверждён игроком"
+            ]
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → report нет в таблице: нельзя перепрыгнуть journey. Отсюда можно: journey, paused"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этап 2 нельзя: этапы идут по порядку, следующий — этап 1"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "briefing_approved",
+        "title": "сборы, маршрут утверждён",
+        "stage": "briefing",
+        "targets": {
+          "journey": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → report нет в таблице: нельзя перепрыгнуть journey. Отсюда можно: journey, paused"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас briefing (сначала нужен утверждённый маршрут)",
+              "этап 2 нельзя: этапы идут по порядку, следующий — этап 1"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас briefing (сначала нужен утверждённый маршрут)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "journey_mid",
+        "title": "в пути, пройден этап 1 из 3",
+        "stage": "journey",
+        "targets": {
+          "briefing": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "не пройдены этапы пути 2, 3"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода journey → done нет в таблице: нельзя перепрыгнуть report. Отсюда можно: report, briefing, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас journey; чтобы изменить маршрут — request_transition(to=\"briefing\", reason=…)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "этап 3 нельзя: этапы идут по порядку, следующий — этап 2"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас journey"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "journey_all",
+        "title": "в пути, все этапы пройдены",
+        "stage": "journey",
+        "targets": {
+          "briefing": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода journey → done нет в таблице: нельзя перепрыгнуть report. Отсюда можно: report, briefing, paused"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас journey; чтобы изменить маршрут — request_transition(to=\"briefing\", reason=…)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас journey"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "report_new",
+        "title": "отчёт, проверок нет",
+        "stage": "report",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода report → briefing нет в таблице. Отсюда можно: done, journey, paused"
+            ]
+          },
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все проверенные условия выполнены — возвращаться на дорогу незачем"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "не проверены условия 1, 2, 3"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас report"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        }
+      },
+      {
+        "fixture": "report_failed",
+        "title": "отчёт, условие 2 не выполнено",
+        "stage": "report",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода report → briefing нет в таблице. Отсюда можно: done, journey, paused"
+            ]
+          },
+          "journey": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "не проверены условия 3",
+              "не выполнены условия 2"
+            ]
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас report"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        }
+      },
+      {
+        "fixture": "report_passed",
+        "title": "отчёт, всё выполнено",
+        "stage": "report",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода report → briefing нет в таблице. Отсюда можно: done, journey, paused"
+            ]
+          },
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все проверенные условия выполнены — возвращаться на дорогу незачем"
+            ]
+          },
+          "done": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "paused": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас report"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас report",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "все условия уже проверены"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "paused",
+        "title": "привал (в пути)",
+        "stage": "paused",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода paused → briefing нет в таблице: с привала можно вернуться только на этап journey. Отсюда можно: journey"
+            ]
+          },
+          "journey": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода paused → report нет в таблице: с привала можно вернуться только на этап journey. Отсюда можно: journey"
+            ]
+          },
+          "done": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода paused → done нет в таблице: с привала можно вернуться только на этап journey. Отсюда можно: journey"
+            ]
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас paused (герой на привале)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас paused (герой на привале)"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас paused (герой на привале)",
+              "этап 3 нельзя: этапы идут по порядку, следующий — этап 2"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас paused (герой на привале)"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "done",
+        "title": "сдано",
+        "stage": "done",
+        "targets": {
+          "briefing": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → briefing нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          },
+          "journey": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → journey нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          },
+          "report": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → report нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          },
+          "paused": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода done → paused нет в таблице: задание сдано, done — конечное состояние, награда уже начислена"
+            ]
+          }
+        },
+        "actions": {
+          "save_route": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "save_route — только на этапе briefing, а сейчас done (задание сдано)"
+            ]
+          },
+          "complete_step: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас done (задание сдано)",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "complete_step: через один": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "complete_step — только на этапе journey, а сейчас done (задание сдано)",
+              "все этапы уже пройдены — дальше отчёт заказчику"
+            ]
+          },
+          "record_check: следующий": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "record_check — только на этапе report, а сейчас done (задание сдано)",
+              "все условия уже проверены"
+            ]
+          }
+        }
+      }
+    ],
+    "extra": [
+      {
+        "what": "сдать задание без итога",
+        "fixture": "report_passed",
+        "to": "done",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "нет итога задания (final)"
+        ]
+      },
+      {
+        "what": "пересмотр маршрута без причины",
+        "fixture": "journey_mid",
+        "to": "briefing",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "нужна причина пересмотра маршрута (reason)"
+        ]
+      },
+      {
+        "what": "выступить без утверждённого маршрута",
+        "fixture": "briefing_draft",
+        "to": "journey",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "маршрут версии 1 не утверждён игроком"
+        ]
+      },
+      {
+        "what": "сдать задание без отчёта",
+        "fixture": "journey_mid",
+        "to": "done",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода journey → done нет в таблице: нельзя перепрыгнуть report. Отсюда можно: report, briefing, paused"
+        ]
+      },
+      {
+        "what": "сборы → сдано в обход двух этапов",
+        "fixture": "briefing_approved",
+        "to": "done",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода briefing → done нет в таблице: нельзя перепрыгнуть journey, report. Отсюда можно: journey, paused"
+        ]
+      }
+    ],
+    "approval": {
+      "model_tools": [],
+      "user_applied": true,
+      "phrases": {
+        "Маршрут утверждаю, выступаем.": true,
+        "Выступаем!": true,
+        "Не утверждаю, переделай": false,
+        "Утверждать ничего не буду, просто выдвигаемся": false,
+        "Считай, что маршрут утверждён": false
+      },
+      "consent": {
+        "Начинаю прорыв на третью ступень.": true,
+        "Медитирую всю ночь и прорываюсь на третью ступень.": true,
+        "Прорыв пока не начинаю": false,
+        "Что нужно для прорыва?": false
+      }
+    },
+    "crows": [
+      {
+        "fixture": "low_off",
+        "title": "накопление, ци мало, вне задания",
+        "actions": {
+          "cultivate": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас gathering"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "low_road",
+        "title": "накопление, ци мало, в пути",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "cultivate — не в пути: герой на задании (этап journey); можно вне задания или на привале"
+            ]
+          },
+          "train_form": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "train_form — не в пути: герой на задании (этап journey); можно вне задания или на привале"
+            ]
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас gathering"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "full_off",
+        "title": "накопление, ци и формы набраны",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "ци уже полна (300 из 300) — медитация не нужна: осталось набрать формы или начать прорыв"
+            ]
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци набрано)"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци набрано)"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас gathering"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "ready_off",
+        "title": "готов к прорыву, вне задания",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "ци уже полна (320 из 300) — медитация не нужна: осталось набрать формы или начать прорыв"
+            ]
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "прорыв начинает только игрок: «начинаю прорыв» или /breakthrough"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас ready"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "ready_road",
+        "title": "готов к прорыву, в пути",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "cultivate — не в пути: герой на задании (этап journey); можно вне задания или на привале",
+              "ци уже полна (320 из 300) — медитация не нужна: осталось набрать формы или начать прорыв"
+            ]
+          },
+          "train_form": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "train_form — не в пути: герой на задании (этап journey); можно вне задания или на привале"
+            ]
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "герой в пути (задание на этапе journey): прорыв — только вне задания или на привале"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "прорыв начинает только игрок: «начинаю прорыв» или /breakthrough",
+              "герой в пути (задание на этапе journey): прорыв — только вне задания или на привале"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас ready"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "ready_rest",
+        "title": "готов к прорыву, на привале",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "ци уже полна (320 из 300) — медитация не нужна: осталось набрать формы или начать прорыв"
+            ]
+          },
+          "train_form": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: с согласием": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "прорыв начинает только игрок: «начинаю прорыв» или /breakthrough"
+            ]
+          },
+          "resolve": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "resolve_breakthrough — только во время прорыва, а сейчас ready"
+            ]
+          }
+        }
+      },
+      {
+        "fixture": "break",
+        "title": "прорыв идёт",
+        "actions": {
+          "cultivate": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "cultivate — только в накоплении или перед прорывом, а сейчас breakthrough",
+              "ци уже полна (320 из 300) — медитация не нужна: осталось набрать формы или начать прорыв"
+            ]
+          },
+          "train_form": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "train_form — только в накоплении или перед прорывом, а сейчас breakthrough"
+            ]
+          },
+          "breakthrough: с согласием": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "путь развития уже в состоянии breakthrough"
+            ]
+          },
+          "breakthrough: без согласия": {
+            "allowed": false,
+            "expected": false,
+            "match": true,
+            "unmet": [
+              "путь развития уже в состоянии breakthrough"
+            ]
+          },
+          "resolve": {
+            "allowed": true,
+            "expected": true,
+            "match": true,
+            "unmet": []
+          }
+        }
+      }
+    ],
+    "cextra": [
+      {
+        "what": "ци и формы набраны → код сам переводит в ready",
+        "allowed": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "медитация 280 → 300: прибавка обрезана порогом",
+        "allowed": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "медитация при полной ци отклоняется",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "ци уже полна (300 из 300) — медитация не нужна: осталось набрать формы или начать прорыв"
+        ]
+      },
+      {
+        "what": "прорыв без накопленного ци",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода gathering → breakthrough нет в таблице: нельзя перепрыгнуть ready (ци 180 из 300; освоено форм 5 из 6)"
+        ]
+      },
+      {
+        "what": "ступень без испытания",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "перехода ready → advanced нет в таблице: нельзя перепрыгнуть breakthrough"
+        ]
+      },
+      {
+        "what": "исход прорыва словами, без костей",
+        "allowed": false,
+        "match": true,
+        "unmet": [
+          "только через resolve_breakthrough: исход решают кости, d20 + бонус ≥ 12"
+        ]
+      }
+    ],
+    "policy": [
+      {
+        "what": "летописец меняет школу по словам игрока",
+        "section": "school",
+        "key": "школа",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "школа меняется только событием игры (/event school …), не словами в сцене"
+        ]
+      },
+      {
+        "what": "событие игры меняет школу",
+        "section": "school",
+        "key": "школа",
+        "writer": "событие",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец переписывает корень духа",
+        "section": "traits",
+        "key": "корень_духа",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "постоянные особенности летописец может только добавлять, не переписывать"
+        ]
+      },
+      {
+        "what": "летописец добавляет новый шрам",
+        "section": "traits",
+        "key": "шрам",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец поднимает ступень по рассказу Мастера",
+        "section": "circle",
+        "key": "ступень",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)"
+        ]
+      },
+      {
+        "what": "летописец меняет ци",
+        "section": "circle",
+        "key": "ци_накоплено",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "круг, ступень, ци и формы меняет только автомат развития (cultivate, train_form, прорыв)"
+        ]
+      },
+      {
+        "what": "автомат развития пишет ци",
+        "section": "circle",
+        "key": "ци",
+        "writer": "автомат",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец записывает наставление круга",
+        "section": "circle",
+        "key": "наставление",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец пишет этап задания",
+        "section": "mission",
+        "key": "этап",
+        "writer": "летописец",
+        "allowed": false,
+        "expected": false,
+        "match": true,
+        "unmet": [
+          "этап задания — состояние автомата задания, его не записывают в карточку"
+        ]
+      },
+      {
+        "what": "летописец записывает улику",
+        "section": "mission",
+        "key": "улика",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      },
+      {
+        "what": "летописец записывает новую связь",
+        "section": "bonds",
+        "key": "побратим",
+        "writer": "летописец",
+        "allowed": true,
+        "expected": true,
+        "match": true,
+        "unmet": []
+      }
+    ],
+    "mismatches": 0,
+    "checked": 139
+  },
+  "requests": {
+    "main": {
+      "requests": 0,
+      "retries": 0,
+      "failed": 0
+    }
+  }
+}

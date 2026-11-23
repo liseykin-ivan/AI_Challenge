@@ -1,7 +1,7 @@
 """Клиент OpenAI-совместимого Chat Completions API на голом httpx.
 
 Временные сбои — таймаут, обрыв связи, HTTP 408/409/425/429 и любой 5xx — повторяются: до `retries` раз
-(LLM_RETRIES в .env, по умолчанию 2), с паузой 1, 2, 4… с ±25% (или сколько просит заголовок Retry-After).
+(LLM_RETRIES в .env, по умолчанию 5), с паузой 1, 2, 4… с ±25% (или сколько просит заголовок Retry-After).
 Ошибки запроса (400, 401, 404, переполнение окна) не повторяются: повтор дал бы тот же ответ.
 """
 import os
@@ -14,7 +14,7 @@ from typing import Callable
 import httpx
 
 USER_AGENT = "ai-challenge-cli/0.1"
-DEFAULT_RETRIES = 2
+DEFAULT_RETRIES = 5
 RETRY_STATUSES = {408, 409, 425, 429}  # плюс все 5xx: временные сбои, повтор может пройти (как в SDK OpenAI)
 MAX_DELAY = 30.0  # потолок паузы между попытками, секунды
 
@@ -175,7 +175,7 @@ class LLMClient:
 
 
 def env_retries() -> int:
-    """LLM_RETRIES из окружения (config.load_settings уже проверил и загрузил .env); по умолчанию 2."""
+    """LLM_RETRIES из окружения (config.load_settings уже проверил и загрузил .env); по умолчанию 5."""
     try:
         return max(int(os.getenv("LLM_RETRIES") or DEFAULT_RETRIES), 0)
     except ValueError:
